@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import '../services/saju_calculator.dart';
+import '../models/saju_chars.dart';
 
 class SajuInputScreen extends StatefulWidget {
   const SajuInputScreen({super.key});
@@ -86,20 +88,121 @@ class _SajuInputScreenState extends State<SajuInputScreen> {
         return;
       }
 
-      // TODO: 사주 분석 화면으로 이동
+      _calculateAndShowSaju();
+    }
+  }
+
+  void _calculateAndShowSaju() {
+    try {
+      // 사주 계산 실행
+      final sajuChars = SajuCalculator.instance.calculateSaju(
+        birthDate: _selectedDate!,
+        hour: _selectedTime!.hour,
+        minute: _selectedTime!.minute,
+        isLunar: _isLunar,
+        gender: _selectedGender!,
+      );
+
+      // 계산 결과를 다이얼로그로 표시
+      _showSajuResult(sajuChars);
+    } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            '입력 완료!\n'
-            '이름: ${_nameController.text.isEmpty ? '없음' : _nameController.text}\n'
-            '생년월일: ${DateFormat('yyyy년 MM월 dd일').format(_selectedDate!)} (${_isLunar ? '음력' : '양력'})\n'
-            '태어난 시간: ${_selectedTime!.format(context)}\n'
-            '성별: $_selectedGender',
-          ),
-          duration: const Duration(seconds: 3),
-        ),
+        SnackBar(content: Text('사주 계산 중 오류가 발생했습니다: $e')),
       );
     }
+  }
+
+  void _showSajuResult(SajuChars sajuChars) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('사주 8자 계산 결과'),
+        content: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // 입력 정보
+              Text(
+                '📋 입력 정보',
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text('이름: ${_nameController.text.isEmpty ? '없음' : _nameController.text}'),
+              Text('생년월일: ${DateFormat('yyyy년 MM월 dd일').format(_selectedDate!)} (${_isLunar ? '음력' : '양력'})'),
+              Text('태어난 시간: ${_selectedTime!.hour.toString().padLeft(2, '0')}:${_selectedTime!.minute.toString().padLeft(2, '0')}'),
+              Text('성별: $_selectedGender'),
+              const SizedBox(height: 16),
+              
+              // 8자 결과
+              Text(
+                '🔮 사주 8자',
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.primaryContainer,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  sajuChars.display,
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).colorScheme.onPrimaryContainer,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+              const SizedBox(height: 12),
+              
+              // 상세 정보
+              Text('년주 (年柱): ${sajuChars.year.display}'),
+              Text('월주 (月柱): ${sajuChars.month.display}'),
+              Text('일주 (日柱): ${sajuChars.day.display}'),
+              Text('시주 (時柱): ${sajuChars.hour.display}'),
+              const SizedBox(height: 12),
+              
+              Text(
+                '💡 일간(日干): ${sajuChars.day.cheongan.name}',
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+              ),
+              Text(
+                '이 사주의 중심이 되는 천간입니다.',
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('확인'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              // TODO: 다음 단계 - AI 분석 화면으로 이동
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('AI 분석 화면 개발 예정')),
+              );
+            },
+            child: const Text('AI 분석하기'),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
