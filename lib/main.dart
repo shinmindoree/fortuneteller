@@ -4,8 +4,10 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'services/supabase_service.dart';
 import 'services/notification_service.dart';
 import 'services/storage_service.dart';
+import 'services/fortune_service.dart';
 import 'models/saved_analysis.dart';
 import 'models/calendar_event.dart';
+import 'models/fortune_reading.dart';
 import 'screens/saju_input_screen.dart';
 import 'screens/calendar_screen.dart';
 import 'screens/saju_analysis_screen.dart';
@@ -259,6 +261,214 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
+  /// 운세 상세 보기
+  void _showFortuneDetail(BuildContext context, FortuneReading fortune) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => DraggableScrollableSheet(
+        initialChildSize: 0.7,
+        maxChildSize: 0.9,
+        minChildSize: 0.5,
+        builder: (context, scrollController) {
+          return Container(
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+            ),
+            child: SingleChildScrollView(
+              controller: scrollController,
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // 헤더
+                  Row(
+                    children: [
+                      Text(
+                        fortune.typeIcon,
+                        style: const TextStyle(fontSize: 28),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              fortune.typeName,
+                              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            Text(
+                              fortune.dateFormatted,
+                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      // 운세 등급
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: Color(int.parse(fortune.scores.gradeColor.substring(1), radix: 16) + 0xFF000000),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          '${fortune.scores.grade}급',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                  
+                  // 진행률
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            '진행률',
+                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          Text(
+                            '${(fortune.progress * 100).toInt()}%',
+                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: Theme.of(context).colorScheme.primary,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      LinearProgressIndicator(
+                        value: fortune.progress,
+                        backgroundColor: Theme.of(context).colorScheme.surfaceContainer,
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          Theme.of(context).colorScheme.primary,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+                  
+                  // 운세 점수
+                  Text(
+                    '운세 점수',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(child: _ScoreItem('재물', fortune.scores.wealth, Colors.amber)),
+                      Expanded(child: _ScoreItem('건강', fortune.scores.health, Colors.green)),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Expanded(child: _ScoreItem('애정', fortune.scores.love, Colors.pink)),
+                      Expanded(child: _ScoreItem('직업', fortune.scores.career, Colors.blue)),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                  
+                  // 설명
+                  Text(
+                    fortune.title,
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    fortune.description,
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  ),
+                  const SizedBox(height: 20),
+                  
+                  // 행운 아이템
+                  if (fortune.luckyItems.isNotEmpty) ...[
+                    Text(
+                      '🍀 행운 아이템',
+                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 8,
+                      children: fortune.luckyItems.map((item) => Chip(
+                        label: Text(item),
+                        backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+                      )).toList(),
+                    ),
+                    const SizedBox(height: 16),
+                  ],
+                  
+                  // 추천 사항
+                  if (fortune.recommendations.isNotEmpty) ...[
+                    Text(
+                      '✨ 추천 행동',
+                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    ...fortune.recommendations.map((rec) => Padding(
+                      padding: const EdgeInsets.only(bottom: 4),
+                      child: Row(
+                        children: [
+                          const Text('• '),
+                          Expanded(child: Text(rec)),
+                        ],
+                      ),
+                    )),
+                    const SizedBox(height: 16),
+                  ],
+                  
+                  // 주의 사항
+                  if (fortune.warnings.isNotEmpty) ...[
+                    Text(
+                      '⚠️ 주의 사항',
+                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    ...fortune.warnings.map((warning) => Padding(
+                      padding: const EdgeInsets.only(bottom: 4),
+                      child: Row(
+                        children: [
+                          const Text('• '),
+                          Expanded(child: Text(warning)),
+                        ],
+                      ),
+                    )),
+                  ],
+                  const SizedBox(height: 20),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -356,6 +566,46 @@ class HomeScreen extends StatelessWidget {
                         MaterialPageRoute(builder: (context) => const CalendarScreen()),
                       );
                     },
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+            
+            // 운세 카드 섹션
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '나의 운세',
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                SizedBox(
+                  height: 220,
+                  child: PageView(
+                    children: [
+                      _FortuneCard(
+                        title: '오늘의 운세',
+                        icon: '🌅',
+                        future: FortuneService.instance.getTodayFortune(),
+                        onTap: (fortune) => _showFortuneDetail(context, fortune),
+                      ),
+                      _FortuneCard(
+                        title: '이주의 운세',
+                        icon: '📅',
+                        future: FortuneService.instance.getWeeklyFortune(),
+                        onTap: (fortune) => _showFortuneDetail(context, fortune),
+                      ),
+                      _FortuneCard(
+                        title: '이달의 운세',
+                        icon: '🗓️',
+                        future: FortuneService.instance.getMonthlyFortune(),
+                        onTap: (fortune) => _showFortuneDetail(context, fortune),
+                      ),
+                    ],
                   ),
                 ),
               ],
@@ -632,6 +882,264 @@ class _StatusRow extends StatelessWidget {
           const SizedBox(width: 8),
           Text('$service: ${isConfigured ? '설정됨' : '미설정'}'),
         ],
+      ),
+    );
+  }
+}
+
+/// 운세 카드 위젯
+class _FortuneCard extends StatelessWidget {
+  final String title;
+  final String icon;
+  final Future<FortuneReading> future;
+  final Function(FortuneReading) onTap;
+
+  const _FortuneCard({
+    required this.title,
+    required this.icon,
+    required this.future,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 4.0),
+      child: FutureBuilder<FortuneReading>(
+        future: future,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return Card(
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(16),
+                child: const Center(
+                  child: CircularProgressIndicator(),
+                ),
+              ),
+            );
+          }
+
+          if (snapshot.hasError || !snapshot.hasData) {
+            return Card(
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(icon, style: const TextStyle(fontSize: 32)),
+                    const SizedBox(height: 8),
+                    Text(
+                      title,
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '운세를 불러오는데\n실패했습니다',
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Theme.of(context).colorScheme.error,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }
+
+          final fortune = snapshot.data!;
+          
+          return Card(
+            child: InkWell(
+              onTap: () => onTap(fortune),
+              borderRadius: BorderRadius.circular(16),
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // 헤더
+                    Row(
+                      children: [
+                        Text(icon, style: const TextStyle(fontSize: 24)),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            title,
+                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                        // 등급 뱃지
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: Color(int.parse(fortune.scores.gradeColor.substring(1), radix: 16) + 0xFF000000),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            fortune.scores.grade,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    
+                    // 요약
+                    Text(
+                      fortune.summary,
+                      style: Theme.of(context).textTheme.bodyMedium,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 12),
+                    
+                    // 진행률
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              fortune.dateFormatted,
+                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                            Text(
+                              '${(fortune.progress * 100).toInt()}%',
+                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                fontWeight: FontWeight.bold,
+                                color: Theme.of(context).colorScheme.primary,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 4),
+                        LinearProgressIndicator(
+                          value: fortune.progress,
+                          backgroundColor: Theme.of(context).colorScheme.surfaceContainer,
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            Theme.of(context).colorScheme.primary,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    
+                    // 점수 미리보기
+                    Row(
+                      children: [
+                        _MiniScoreItem('재물', fortune.scores.wealth),
+                        const SizedBox(width: 8),
+                        _MiniScoreItem('건강', fortune.scores.health),
+                        const SizedBox(width: 8),
+                        _MiniScoreItem('애정', fortune.scores.love),
+                        const SizedBox(width: 8),
+                        _MiniScoreItem('직업', fortune.scores.career),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+/// 점수 아이템 위젯 (상세 화면용)
+class _ScoreItem extends StatelessWidget {
+  final String label;
+  final int score;
+  final Color color;
+
+  const _ScoreItem(this.label, this.score, this.color);
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 4),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: color.withOpacity(0.3)),
+      ),
+      child: Column(
+        children: [
+          Text(
+            label,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            '$score',
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.bold,
+              color: color,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// 미니 점수 아이템 위젯 (카드용)
+class _MiniScoreItem extends StatelessWidget {
+  final String label;
+  final int score;
+
+  const _MiniScoreItem(this.label, this.score);
+
+  @override
+  Widget build(BuildContext context) {
+    Color getScoreColor(int score) {
+      if (score >= 80) return Colors.green;
+      if (score >= 60) return Colors.orange;
+      return Colors.red;
+    }
+
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 6),
+        decoration: BoxDecoration(
+          color: getScoreColor(score).withOpacity(0.1),
+          borderRadius: BorderRadius.circular(6),
+        ),
+        child: Column(
+          children: [
+            Text(
+              label,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                fontSize: 10,
+              ),
+            ),
+            Text(
+              '$score',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: getScoreColor(score),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

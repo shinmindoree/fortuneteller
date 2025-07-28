@@ -35,6 +35,9 @@ class StorageService {
     return _prefs!;
   }
   
+  /// 외부에서 SharedPreferences 접근용 (FortuneService에서 사용)
+  Future<SharedPreferences> get preferences => _preferences;
+  
   /// 사주 분석 결과 저장
   Future<bool> saveAnalysis(SavedAnalysis analysis) async {
     try {
