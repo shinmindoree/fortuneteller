@@ -60,8 +60,15 @@ class OpenAIService {
     required String gender,
     required bool isLunar,
   }) {
+    final now = DateTime.now();
+    final futureDate = now.add(const Duration(days: 90)); // 3개월 후
+    
     return '''
 당신은 전문적인 사주명리학 전문가입니다. 다음 사주 정보를 바탕으로 상세하고 정확한 분석을 해주세요.
+
+**현재 날짜 정보:**
+- 오늘 날짜: ${now.year}년 ${now.month}월 ${now.day}일
+- 분석 기간: ${now.year}년 ${now.month}월 ${now.day}일부터 ${futureDate.year}년 ${futureDate.month}월 ${futureDate.day}일까지 (향후 3개월)
 
 **기본 정보:**
 - 이름: $name
@@ -89,7 +96,7 @@ class OpenAIService {
   "caution_period": "주의해야 할 시기 및 이유 (100자 내외)",
   "good_days": [
     {
-      "date": "2024-XX-XX",
+      "date": "${now.year}-XX-XX",
       "purpose": "이사/계약/시험/결혼 등",
       "reason": "추천 이유 (50자 내외)"
     }
@@ -100,9 +107,10 @@ class OpenAIService {
 **요청사항:**
 1. 전통 사주명리학 원리에 따라 정확하게 분석해주세요
 2. 구체적이고 실용적인 조언을 포함해주세요
-3. 향후 3개월 내 길일을 5개 이상 추천해주세요
-4. 부정적인 내용도 건설적으로 표현해주세요
-5. 응답은 반드시 유효한 JSON 형식으로 작성해주세요
+3. **중요**: ${now.year}년 ${now.month}월 ${now.day}일부터 ${futureDate.year}년 ${futureDate.month}월 ${futureDate.day}일까지의 길일을 5개 이상 추천해주세요
+4. 추천 날짜는 반드시 ${now.year}년 이후의 미래 날짜여야 합니다
+5. 부정적인 내용도 건설적으로 표현해주세요
+6. 응답은 반드시 유효한 JSON 형식으로 작성해주세요
 ''';
   }
   

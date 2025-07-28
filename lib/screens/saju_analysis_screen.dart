@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../services/openai_service.dart';
 import '../models/saju_chars.dart';
+import '../models/calendar_event.dart';
+import 'calendar_screen.dart';
 
 class SajuAnalysisScreen extends StatefulWidget {
   final SajuChars sajuChars;
@@ -450,8 +452,21 @@ class _SajuAnalysisScreenState extends State<SajuAnalysisScreen> {
                   color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
               )
-            else
+            else ...[
               ...goodDays.map((goodDay) => _buildGoodDayItem(goodDay)).toList(),
+              const SizedBox(height: 16),
+              Center(
+                child: ElevatedButton.icon(
+                  onPressed: () => _addGoodDaysToCalendar(goodDays),
+                  icon: const Icon(Icons.calendar_month),
+                  label: const Text('캘린더에 추가'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Theme.of(context).colorScheme.secondary,
+                    foregroundColor: Theme.of(context).colorScheme.onSecondary,
+                  ),
+                ),
+              ),
+            ],
           ],
         ),
       ),
@@ -545,5 +560,45 @@ class _SajuAnalysisScreenState extends State<SajuAnalysisScreen> {
         ),
       ),
     );
+  }
+
+  /// AI 추천 길일을 캘린더에 추가
+  void _addGoodDaysToCalendar(List<GoodDay> goodDays) {
+    try {
+      // GoodDay를 CalendarEvent로 변환
+      final events = goodDays.map((goodDay) {
+        return CalendarEvent.fromGoodDay(
+          goodDay.date,
+          goodDay.purpose,
+          goodDay.reason,
+        );
+      }).toList();
+
+      // 캘린더 화면으로 이동하면서 이벤트 전달
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (context) => CalendarScreen(
+            initialEvents: events,
+          ),
+        ),
+      );
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('${goodDays.length}개의 길일이 캘린더에 추가되었습니다'),
+          action: SnackBarAction(
+            label: '확인',
+            onPressed: () {},
+          ),
+        ),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('캘린더 추가 중 오류가 발생했습니다: $e'),
+          backgroundColor: Theme.of(context).colorScheme.error,
+        ),
+      );
+    }
   }
 } 

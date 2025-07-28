@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'services/supabase_service.dart';
+import 'services/notification_service.dart';
 import 'screens/saju_input_screen.dart';
+import 'screens/calendar_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -12,6 +15,9 @@ Future<void> main() async {
     
     // Initialize Supabase
     await SupabaseService.initialize();
+    
+    // Initialize Notification Service
+    await NotificationService.instance.initialize();
     
     runApp(const FortuneTellerApp());
   } catch (e) {
@@ -72,6 +78,16 @@ class FortuneTellerApp extends StatelessWidget {
     return MaterialApp(
       title: '사주플래너',
       debugShowCheckedModeBanner: false,
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: const [
+        Locale('ko', 'KR'),
+        Locale('en', 'US'),
+      ],
+      locale: const Locale('ko', 'KR'),
       theme: ThemeData(
         useMaterial3: true,
         colorScheme: ColorScheme.fromSeed(
@@ -301,9 +317,8 @@ class HomeScreen extends StatelessWidget {
                     title: '길일 보기',
                     subtitle: '이번 달 추천\n길일을 확인하세요',
                     onTap: () {
-                      // TODO: Navigate to calendar screen
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('캘린더 화면으로 이동 (개발 예정)')),
+                      Navigator.of(context).push(
+                        MaterialPageRoute(builder: (context) => const CalendarScreen()),
                       );
                     },
                   ),
@@ -387,6 +402,19 @@ class HomeScreen extends StatelessWidget {
                     _StatusRow('Azure OpenAI', dotenv.env['AZURE_OPENAI_ENDPOINT'] != null),
                     _StatusRow('Supabase', dotenv.env['SUPABASE_URL'] != null),
                     _StatusRow('Firebase', dotenv.env['FIREBASE_PROJECT_ID'] != null),
+                    const SizedBox(height: 12),
+                    Center(
+                      child: TextButton.icon(
+                        onPressed: () async {
+                          await NotificationService.instance.showTestNotification();
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('테스트 알림을 전송했습니다!')),
+                          );
+                        },
+                        icon: const Icon(Icons.notifications_active),
+                        label: const Text('알림 테스트'),
+                      ),
+                    ),
                   ],
                 ),
               ),
