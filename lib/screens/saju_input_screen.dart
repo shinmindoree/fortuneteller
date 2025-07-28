@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../services/saju_calculator.dart';
 import '../models/saju_chars.dart';
+import 'saju_analysis_screen.dart';
 
 class SajuInputScreen extends StatefulWidget {
   const SajuInputScreen({super.key});
@@ -193,9 +194,17 @@ class _SajuInputScreenState extends State<SajuInputScreen> {
           ElevatedButton(
             onPressed: () {
               Navigator.of(context).pop();
-              // TODO: 다음 단계 - AI 분석 화면으로 이동
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('AI 분석 화면 개발 예정')),
+              // AI 분석 화면으로 이동
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => SajuAnalysisScreen(
+                    sajuChars: sajuChars,
+                    name: _nameController.text,
+                    birthDate: _selectedDate!,
+                    gender: _selectedGender!,
+                    isLunar: _isLunar,
+                  ),
+                ),
               );
             },
             child: const Text('AI 분석하기'),
