@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../services/openai_service.dart';
+import '../services/storage_service.dart';
 import '../models/saju_chars.dart';
 import '../models/calendar_event.dart';
+import '../models/saved_analysis.dart';
 import 'calendar_screen.dart';
 
 class SajuAnalysisScreen extends StatefulWidget {
@@ -11,6 +13,7 @@ class SajuAnalysisScreen extends StatefulWidget {
   final DateTime birthDate;
   final String gender;
   final bool isLunar;
+  final SajuAnalysisResult? preloadedResult; // 미리 로드된 결과
 
   const SajuAnalysisScreen({
     super.key,
@@ -19,6 +22,7 @@ class SajuAnalysisScreen extends StatefulWidget {
     required this.birthDate,
     required this.gender,
     required this.isLunar,
+    this.preloadedResult, // 선택적 파라미터
   });
 
   @override
@@ -43,13 +47,24 @@ class _SajuAnalysisScreenState extends State<SajuAnalysisScreen> {
         _errorMessage = null;
       });
 
-      final result = await OpenAIService.instance.analyzeSaju(
-        sajuChars: widget.sajuChars,
-        name: widget.name.isEmpty ? '익명' : widget.name,
-        birthDate: widget.birthDate,
-        gender: widget.gender,
-        isLunar: widget.isLunar,
-      );
+      SajuAnalysisResult result;
+      
+      // 미리 로드된 결과가 있으면 사용, 없으면 AI 분석
+      if (widget.preloadedResult != null) {
+        result = widget.preloadedResult!;
+        debugPrint('📖 저장된 분석 결과 사용');
+      } else {
+        result = await OpenAIService.instance.analyzeSaju(
+          sajuChars: widget.sajuChars,
+          name: widget.name.isEmpty ? '익명' : widget.name,
+          birthDate: widget.birthDate,
+          gender: widget.gender,
+          isLunar: widget.isLunar,
+        );
+        
+        // 새로운 분석인 경우에만 저장
+        await _saveAnalysisResult(result);
+      }
 
       if (mounted) {
         setState(() {
@@ -560,6 +575,33 @@ class _SajuAnalysisScreenState extends State<SajuAnalysisScreen> {
         ),
       ),
     );
+  }
+
+  /// 분석 결과 자동 저장
+  Future<void> _saveAnalysisResult(SajuAnalysisResult result) async {
+    try {
+      final savedAnalysis = SavedAnalysis.fromAnalysis(
+        name: widget.name,
+        birthDate: widget.birthDate,
+        gender: widget.gender,
+        isLunar: widget.isLunar,
+        sajuChars: widget.sajuChars,
+        analysisResult: result,
+      );
+      
+      final success = await StorageService.instance.saveAnalysis(savedAnalysis);
+      
+      if (success) {
+        debugPrint('💾 분석 결과 자동 저장 완료');
+        
+        // 저장된 길일 이벤트도 업데이트
+        await StorageService.instance.saveGoodDayEvents(savedAnalysis.goodDayEvents);
+      } else {
+        debugPrint('❌ 분석 결과 자동 저장 실패');
+      }
+    } catch (e) {
+      debugPrint('❌ 분석 결과 저장 중 오류: $e');
+    }
   }
 
   /// AI 추천 길일을 캘린더에 추가

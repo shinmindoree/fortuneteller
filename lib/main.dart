@@ -3,8 +3,12 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'services/supabase_service.dart';
 import 'services/notification_service.dart';
+import 'services/storage_service.dart';
+import 'models/saved_analysis.dart';
+import 'models/calendar_event.dart';
 import 'screens/saju_input_screen.dart';
 import 'screens/calendar_screen.dart';
+import 'screens/saju_analysis_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -18,6 +22,9 @@ Future<void> main() async {
     
     // Initialize Notification Service
     await NotificationService.instance.initialize();
+    
+    // Initialize Storage Service
+    await StorageService.instance.initialize();
     
     runApp(const FortuneTellerApp());
   } catch (e) {
@@ -224,6 +231,34 @@ class _SplashScreenState extends State<SplashScreen> {
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
+  /// 분석 결과 자세히 보기
+  void _showAnalysisDetails(BuildContext context, SavedAnalysis analysis) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => SajuAnalysisScreen(
+          sajuChars: analysis.sajuChars,
+          name: analysis.name,
+          birthDate: analysis.birthDate,
+          gender: analysis.gender,
+          isLunar: analysis.isLunar,
+          // 저장된 결과를 표시하도록 설정
+          preloadedResult: analysis.analysisResult,
+        ),
+      ),
+    );
+  }
+
+  /// 길일과 함께 캘린더로 이동
+  void _goToCalendarWithEvents(BuildContext context, List<CalendarEvent> events) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => CalendarScreen(
+          initialEvents: events,
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -247,7 +282,7 @@ class HomeScreen extends StatelessWidget {
           ),
         ],
       ),
-      body: Padding(
+      body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -327,6 +362,93 @@ class HomeScreen extends StatelessWidget {
             ),
             const SizedBox(height: 24),
             
+            // 최근 분석 결과
+            FutureBuilder<SavedAnalysis?>(
+              future: StorageService.instance.getCurrentAnalysis(),
+              builder: (context, snapshot) {
+                final currentAnalysis = snapshot.data;
+                
+                if (currentAnalysis == null) {
+                  return const SizedBox.shrink(); // 저장된 분석이 없으면 숨김
+                }
+                
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '최근 분석',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Card(
+                      child: InkWell(
+                        onTap: () => _showAnalysisDetails(context, currentAnalysis),
+                        borderRadius: BorderRadius.circular(16),
+                        child: Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Icon(
+                                    Icons.auto_awesome,
+                                    color: Theme.of(context).colorScheme.primary,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
+                                      currentAnalysis.summary,
+                                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                '사주: ${currentAnalysis.sajuChars.display}',
+                                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                '길일: ${currentAnalysis.goodDayEvents.length}개',
+                                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Row(
+                                children: [
+                                  TextButton.icon(
+                                    onPressed: () => _showAnalysisDetails(context, currentAnalysis),
+                                    icon: const Icon(Icons.visibility, size: 16),
+                                    label: const Text('자세히 보기'),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  TextButton.icon(
+                                    onPressed: () => _goToCalendarWithEvents(context, currentAnalysis.goodDayEvents),
+                                    icon: const Icon(Icons.calendar_month, size: 16),
+                                    label: const Text('캘린더 보기'),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                  ],
+                );
+              },
+            ),
+            
             // Supabase Connection Test
             Card(
               child: Padding(
@@ -402,6 +524,19 @@ class HomeScreen extends StatelessWidget {
                     _StatusRow('Azure OpenAI', dotenv.env['AZURE_OPENAI_ENDPOINT'] != null),
                     _StatusRow('Supabase', dotenv.env['SUPABASE_URL'] != null),
                     _StatusRow('Firebase', dotenv.env['FIREBASE_PROJECT_ID'] != null),
+                    const SizedBox(height: 8),
+                    FutureBuilder<String>(
+                      future: StorageService.instance.getStorageInfo(),
+                      builder: (context, snapshot) {
+                        final info = snapshot.data ?? '정보 로딩 중...';
+                        return Text(
+                          info,
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          ),
+                        );
+                      },
+                    ),
                     const SizedBox(height: 12),
                     Center(
                       child: TextButton.icon(

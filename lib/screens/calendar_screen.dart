@@ -3,6 +3,7 @@ import 'package:table_calendar/table_calendar.dart';
 import 'package:intl/intl.dart';
 import '../services/openai_service.dart';
 import '../services/notification_service.dart';
+import '../services/storage_service.dart';
 import '../models/calendar_event.dart';
 
 class CalendarScreen extends StatefulWidget {
@@ -32,11 +33,11 @@ class _CalendarScreenState extends State<CalendarScreen> {
     super.initState();
     _selectedEvents = ValueNotifier(_getEventsForDay(_selectedDay));
     
-    // 전달받은 이벤트가 있으면 로드, 없으면 샘플 데이터 로드
+    // 전달받은 이벤트가 있으면 로드, 없으면 저장된 이벤트 로드
     if (widget.initialEvents != null && widget.initialEvents!.isNotEmpty) {
       _loadInitialEvents(widget.initialEvents!);
     } else {
-      _loadSampleGoodDays(); // 임시로 샘플 데이터 로드
+      _loadSavedEvents(); // 저장된 길일 이벤트 로드
     }
   }
 
@@ -113,6 +114,36 @@ class _CalendarScreenState extends State<CalendarScreen> {
     _selectedEvents.value = _getEventsForDay(_selectedDay);
   }
 
+  void _loadSavedEvents() async {
+    try {
+      setState(() {
+        _isLoading = true;
+      });
+      
+      // 저장된 길일 이벤트 로드
+      final savedEvents = await StorageService.instance.getSavedGoodDayEvents();
+      
+      if (savedEvents.isNotEmpty) {
+        _loadInitialEvents(savedEvents);
+        debugPrint('📅 저장된 길일 이벤트 ${savedEvents.length}개 로드 완료');
+      } else {
+        // 저장된 이벤트가 없으면 샘플 데이터 로드
+        _loadSampleGoodDays();
+        debugPrint('📅 저장된 이벤트 없음, 샘플 데이터 로드');
+      }
+      
+      setState(() {
+        _isLoading = false;
+      });
+    } catch (e) {
+      debugPrint('❌ 저장된 이벤트 로드 실패: $e');
+      _loadSampleGoodDays(); // 실패 시 샘플 데이터 로드
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
   void _loadInitialEvents(List<CalendarEvent> events) {
     setState(() {
       _events.clear();
@@ -149,7 +180,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
-            onPressed: _loadSampleGoodDays,
+            onPressed: _loadSavedEvents,
             tooltip: '새로고침',
           ),
           PopupMenuButton<CalendarFormat>(
