@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "526691201430",
+    "project_id": "fortuneteller-app-5dd43",
+    "storage_bucket": "fortuneteller-app-5dd43.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:526691201430:android:441436ec8ed62d77acadb7",
+        "android_client_info": {
+          "package_name": "com.example.fortuneteller"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCyk1kJf7IPWRIWW95yT9RwNaUPJ6nBO0Q"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

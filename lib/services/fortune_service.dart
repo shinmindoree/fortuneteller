@@ -6,7 +6,9 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import '../models/fortune_reading.dart';
 import '../models/saju_chars.dart';
 import '../models/saved_analysis.dart';
+import '../services/openai_service.dart';
 import 'storage_service.dart';
+import 'supabase_sync_service.dart';
 
 /// 운세 생성 서비스
 class FortuneService {
@@ -47,6 +49,12 @@ class FortuneService {
     // 캐시에 저장
     await _cacheFortune(fortune, todayKey);
     
+    // 히스토리에 저장
+    await saveFortune(fortune);
+    
+    // 클라우드 동기화 (백그라운드)
+    _syncFortuneToCloud(fortune);
+    
     return fortune;
   }
 
@@ -78,6 +86,13 @@ class FortuneService {
     );
     
     await _cacheFortune(fortune, weekKey);
+    
+    // 히스토리에 저장
+    await saveFortune(fortune);
+    
+    // 클라우드 동기화 (백그라운드)
+    _syncFortuneToCloud(fortune);
+    
     return fortune;
   }
 
@@ -108,6 +123,13 @@ class FortuneService {
     );
     
     await _cacheFortune(fortune, monthKey);
+    
+    // 히스토리에 저장
+    await saveFortune(fortune);
+    
+    // 클라우드 동기화 (백그라운드)
+    _syncFortuneToCloud(fortune);
+    
     return fortune;
   }
 
@@ -389,5 +411,25 @@ ${analysis.analysisResult.summary.length > 100 ? analysis.analysisResult.summary
       debugPrint('❌ 운세 히스토리 로드 실패: $e');
       return [];
     }
+  }
+
+  /// 운세를 클라우드에 동기화 (백그라운드)
+  void _syncFortuneToCloud(FortuneReading fortune) {
+    // 백그라운드에서 비동기적으로 동기화
+    Future.microtask(() async {
+      try {
+        // Supabase 동기화 서비스를 통해 업로드
+        final syncService = SupabaseSyncService.instance;
+        
+        // 동기화가 진행 중이 아닐 때만 수행
+        if (!syncService.isSyncing) {
+          await syncService.syncAllData();
+          debugPrint('🌟 운세 클라우드 동기화 완료: ${fortune.typeName}');
+        }
+      } catch (e) {
+        debugPrint('⚠️ 운세 클라우드 동기화 실패: $e');
+        // 실패해도 로컬 기능은 계속 작동
+      }
+    });
   }
 } 

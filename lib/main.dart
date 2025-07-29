@@ -5,9 +5,16 @@ import 'services/supabase_service.dart';
 import 'services/notification_service.dart';
 import 'services/storage_service.dart';
 import 'services/fortune_service.dart';
+import 'services/supabase_sync_service.dart';
+import 'services/auth_service.dart';
+import 'services/fcm_service.dart';
+import 'services/firebase_config.dart';
 import 'models/saved_analysis.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'models/calendar_event.dart';
 import 'models/fortune_reading.dart';
+import 'screens/auth_screen.dart';
+import 'screens/notification_settings_screen.dart';
 import 'screens/saju_input_screen.dart';
 import 'screens/calendar_screen.dart';
 import 'screens/saju_analysis_screen.dart';
@@ -27,6 +34,15 @@ Future<void> main() async {
     
     // Initialize Storage Service
     await StorageService.instance.initialize();
+    
+    // Initialize Auth Service
+    await AuthService.instance.initialize();
+    
+    // Initialize Firebase
+    await FirebaseConfig.initialize();
+    
+    // Initialize FCM Service
+    await FCMService.instance.initialize();
     
     runApp(const FortuneTellerApp());
   } catch (e) {
@@ -261,6 +277,24 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
+  /// 상대적 시간 포맷팅
+  String _formatRelativeTime(DateTime dateTime) {
+    final now = DateTime.now();
+    final difference = now.difference(dateTime);
+
+    if (difference.inMinutes < 1) {
+      return '방금 전';
+    } else if (difference.inMinutes < 60) {
+      return '${difference.inMinutes}분 전';
+    } else if (difference.inHours < 24) {
+      return '${difference.inHours}시간 전';
+    } else if (difference.inDays < 7) {
+      return '${difference.inDays}일 전';
+    } else {
+      return '${dateTime.month}월 ${dateTime.day}일';
+    }
+  }
+
   /// 운세 상세 보기
   void _showFortuneDetail(BuildContext context, FortuneReading fortune) {
     showModalBottomSheet(
@@ -476,6 +510,94 @@ class HomeScreen extends StatelessWidget {
         title: const Text('사주플래너'),
         backgroundColor: Theme.of(context).colorScheme.surface,
         actions: [
+          // 사용자 정보 및 로그아웃
+          StreamBuilder<User?>(
+            stream: AuthService.instance.authStateChanges,
+            initialData: AuthService.instance.currentUser,
+            builder: (context, snapshot) {
+              final user = snapshot.data;
+              if (user != null) {
+                return PopupMenuButton<String>(
+                  icon: CircleAvatar(
+                    radius: 16,
+                    backgroundColor: Theme.of(context).colorScheme.primary,
+                    child: Text(
+                      user.email?.substring(0, 1).toUpperCase() ?? 'U',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  itemBuilder: (context) => [
+                    PopupMenuItem(
+                      enabled: false,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            user.email ?? '사용자',
+                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            '로그인됨',
+                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: Colors.green,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const PopupMenuDivider(),
+                    const PopupMenuItem(
+                      value: 'notifications',
+                      child: Row(
+                        children: [
+                          Icon(Icons.notifications),
+                          SizedBox(width: 8),
+                          Text('알림 설정'),
+                        ],
+                      ),
+                    ),
+                    const PopupMenuItem(
+                      value: 'logout',
+                      child: Row(
+                        children: [
+                          Icon(Icons.logout),
+                          SizedBox(width: 8),
+                          Text('로그아웃'),
+                        ],
+                      ),
+                    ),
+                  ],
+                  onSelected: (value) async {
+                    if (value == 'notifications') {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (context) => const NotificationSettingsScreen(),
+                        ),
+                      );
+                    } else if (value == 'logout') {
+                      final result = await AuthService.instance.signOut();
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(result.message ?? '로그아웃 완료'),
+                            backgroundColor: result.isSuccess ? Colors.green : Colors.red,
+                          ),
+                        );
+                      }
+                    }
+                  },
+                );
+              }
+              return const SizedBox.shrink();
+            },
+          ),
+          
           // Supabase 연결 상태 표시
           FutureBuilder<bool>(
             future: SupabaseService.instance.checkConnection(),
@@ -699,20 +821,36 @@ class HomeScreen extends StatelessWidget {
               },
             ),
             
-            // Supabase Connection Test
+            // 클라우드 동기화 상태
             Card(
               child: Padding(
                 padding: const EdgeInsets.all(16.0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      'Supabase 연결 테스트',
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.cloud_sync,
+                          color: Theme.of(context).colorScheme.primary,
+                          size: 20,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            '클라우드 동기화',
+                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                        // 동기화 버튼 또는 로그인 버튼
+                        _SyncOrLoginButton(),
+                      ],
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 12),
+                    
+                    // 연결 상태
                     FutureBuilder<bool>(
                       future: SupabaseService.instance.checkConnection(),
                       builder: (context, snapshot) {
@@ -731,22 +869,46 @@ class HomeScreen extends StatelessWidget {
                         }
                         
                         final isConnected = snapshot.data == true;
-                        return Row(
-                          children: [
-                            Icon(
-                              isConnected ? Icons.check_circle : Icons.error,
-                              size: 16,
-                              color: isConnected ? Colors.green : Colors.red,
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              isConnected ? 'Supabase 연결 성공' : 'Supabase 연결 실패',
-                              style: TextStyle(
+                        return Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: isConnected ? Colors.green.withOpacity(0.1) : Colors.red.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                isConnected ? Icons.cloud_done : Icons.cloud_off,
                                 color: isConnected ? Colors.green : Colors.red,
-                                fontWeight: FontWeight.w500,
+                                size: 16,
                               ),
-                            ),
-                          ],
+                              const SizedBox(width: 8),
+                              Text(
+                                isConnected ? '클라우드 연결됨' : '오프라인 모드',
+                                style: TextStyle(
+                                  color: isConnected ? Colors.green : Colors.red,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 8),
+                    
+                    // 마지막 동기화 시간
+                    FutureBuilder<DateTime?>(
+                      future: SupabaseSyncService.instance.getLastSyncTime(),
+                      builder: (context, snapshot) {
+                        final lastSync = snapshot.data;
+                        return Text(
+                          lastSync != null 
+                              ? '마지막 동기화: ${_formatRelativeTime(lastSync)}'
+                              : '동기화 기록 없음',
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          ),
                         );
                       },
                     ),
@@ -883,6 +1045,116 @@ class _StatusRow extends StatelessWidget {
           Text('$service: ${isConfigured ? '설정됨' : '미설정'}'),
         ],
       ),
+    );
+  }
+}
+
+/// 동기화 또는 로그인 버튼 위젯
+class _SyncOrLoginButton extends StatefulWidget {
+  @override
+  State<_SyncOrLoginButton> createState() => _SyncOrLoginButtonState();
+}
+
+class _SyncOrLoginButtonState extends State<_SyncOrLoginButton> {
+  bool _isSyncing = false;
+
+  Future<void> _performSync() async {
+    if (_isSyncing) return;
+
+    // 로그인 상태 확인
+    if (!AuthService.instance.isLoggedIn) {
+      _goToAuthScreen();
+      return;
+    }
+
+    setState(() {
+      _isSyncing = true;
+    });
+
+    try {
+      final result = await SupabaseSyncService.instance.syncAllData();
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(result.message ?? '동기화 완료'),
+            backgroundColor: result.isSuccess 
+                ? Colors.green 
+                : result.status == SyncStatus.offline 
+                    ? Colors.orange 
+                    : Colors.red,
+            action: SnackBarAction(
+              label: '확인',
+              onPressed: () {},
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('동기화 실패: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSyncing = false;
+        });
+      }
+    }
+  }
+
+  void _goToAuthScreen() {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => const AuthScreen(),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<User?>(
+      stream: AuthService.instance.authStateChanges,
+      initialData: AuthService.instance.currentUser,
+      builder: (context, snapshot) {
+        final isLoggedIn = snapshot.data != null;
+        
+        if (!isLoggedIn) {
+          // 로그인하지 않은 경우 로그인 버튼 표시
+          return IconButton(
+            onPressed: _goToAuthScreen,
+            icon: Icon(
+              Icons.login,
+              color: Theme.of(context).colorScheme.primary,
+            ),
+            tooltip: '로그인',
+          );
+        }
+        
+        // 로그인한 경우 동기화 버튼 표시
+        return IconButton(
+          onPressed: _isSyncing ? null : _performSync,
+          icon: _isSyncing 
+              ? SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                )
+              : Icon(
+                  Icons.sync,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+          tooltip: _isSyncing ? '동기화 중...' : '수동 동기화',
+        );
+      },
     );
   }
 }

@@ -226,4 +226,85 @@ class NotificationService {
       debugPrint('❌ 테스트 알림 표시 실패: $e');
     }
   }
+
+  /// 스케줄된 알림 설정
+  Future<void> scheduleNotification({
+    required String title,
+    required String body,
+    required DateTime scheduledTime,
+    String? payload,
+  }) async {
+    if (!_isInitialized) {
+      await initialize();
+    }
+
+    try {
+      final now = DateTime.now();
+      
+      // 스케줄된 시간이 현재 시간보다 이후인 경우에만 스케줄링
+      if (scheduledTime.isAfter(now)) {
+        // 간단한 지연 스케줄링 (실제 제품에서는 timezone 패키지 사용 권장)
+        final delay = scheduledTime.difference(now);
+        
+        // 24시간 이내의 알림만 지원 (테스트용)
+        if (delay.inHours < 24) {
+          Future.delayed(delay, () async {
+            try {
+              await _flutterLocalNotificationsPlugin.show(
+                DateTime.now().millisecondsSinceEpoch.remainder(100000),
+                title,
+                body,
+                const NotificationDetails(
+                  android: AndroidNotificationDetails(
+                    'scheduled_channel',
+                    '스케줄된 알림',
+                    channelDescription: '예정된 알림',
+                    importance: Importance.high,
+                    priority: Priority.high,
+                  ),
+                  iOS: DarwinNotificationDetails(
+                    presentAlert: true,
+                    presentBadge: true,
+                    presentSound: true,
+                  ),
+                ),
+                payload: payload,
+              );
+              debugPrint('📨 스케줄된 알림 발송: $title');
+            } catch (e) {
+              debugPrint('❌ 스케줄된 알림 발송 실패: $e');
+            }
+          });
+        } else {
+          debugPrint('⚠️ 24시간 이후 알림은 지원되지 않습니다 (현재 구현)');
+        }
+      } else {
+        // 즉시 알림 표시
+        await _flutterLocalNotificationsPlugin.show(
+          DateTime.now().millisecondsSinceEpoch.remainder(100000),
+          title,
+          body,
+          const NotificationDetails(
+            android: AndroidNotificationDetails(
+              'immediate_channel',
+              '즉시 알림',
+              channelDescription: '즉시 발송 알림',
+              importance: Importance.high,
+              priority: Priority.high,
+            ),
+            iOS: DarwinNotificationDetails(
+              presentAlert: true,
+              presentBadge: true,
+              presentSound: true,
+            ),
+          ),
+          payload: payload,
+        );
+      }
+      
+      debugPrint('📅 알림 설정: $title at $scheduledTime');
+    } catch (e) {
+      debugPrint('❌ 알림 설정 실패: $e');
+    }
+  }
 } 
