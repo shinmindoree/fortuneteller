@@ -123,7 +123,7 @@ class FortuneTellerApp extends StatelessWidget {
           centerTitle: true,
           elevation: 0,
         ),
-        cardTheme: const CardThemeData(
+        cardTheme: CardTheme(
           elevation: 2,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.all(Radius.circular(16)),
@@ -224,7 +224,7 @@ class _SplashScreenState extends State<SplashScreen> {
             Text(
               '내 사주에 맞는 길일을 찾아보세요',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.8),
+                color: Theme.of(context).colorScheme.onPrimary.withOpacity(0.8),
               ),
             ),
             const SizedBox(height: 40),
@@ -236,7 +236,7 @@ class _SplashScreenState extends State<SplashScreen> {
               _statusMessage,
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.9),
+                color: Theme.of(context).colorScheme.onPrimary.withOpacity(0.9),
               ),
             ),
           ],
