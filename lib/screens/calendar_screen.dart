@@ -242,7 +242,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                   shape: BoxShape.circle,
                 ),
                 todayDecoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.5),
+                  color: Theme.of(context).colorScheme.primary.withOpacity(0.5),
                   shape: BoxShape.circle,
                 ),
                 markerDecoration: BoxDecoration(
@@ -390,7 +390,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
               decoration: BoxDecoration(
-                color: _getEventColor(event.type).withValues(alpha: 0.2),
+                color: _getEventColor(event.type).withOpacity(0.2),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Text(
@@ -491,7 +491,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: _getEventColor(event.type).withValues(alpha: 0.1),
+                color: _getEventColor(event.type).withOpacity(0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Row(

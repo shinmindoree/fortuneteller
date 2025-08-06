@@ -439,7 +439,7 @@ class _SajuInputScreenState extends State<SajuInputScreen> {
                           ),
                           borderRadius: BorderRadius.circular(12),
                           color: _selectedGender == '남성'
-                              ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.1)
+                              ? Theme.of(context).colorScheme.primary.withOpacity(0.1)
                               : null,
                         ),
                         child: Row(
@@ -487,7 +487,7 @@ class _SajuInputScreenState extends State<SajuInputScreen> {
                           ),
                           borderRadius: BorderRadius.circular(12),
                           color: _selectedGender == '여성'
-                              ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.1)
+                              ? Theme.of(context).colorScheme.primary.withOpacity(0.1)
                               : null,
                         ),
                         child: Row(
