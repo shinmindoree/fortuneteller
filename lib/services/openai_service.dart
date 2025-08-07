@@ -23,6 +23,20 @@ class OpenAIService {
       _deploymentName != null && 
       _apiVersion != null;
   
+  /// 일반적인 AI 응답 생성
+  Future<String> generateResponse(String prompt) async {
+    if (!isConfigured) {
+      throw Exception('Azure OpenAI 설정이 완료되지 않았습니다.');
+    }
+    
+    try {
+      final response = await _callOpenAI(prompt);
+      return response;
+    } catch (e) {
+      throw Exception('AI 응답 생성 중 오류가 발생했습니다: $e');
+    }
+  }
+  
   /// 사주 분석 요청
   Future<SajuAnalysisResult> analyzeSaju({
     required SajuChars sajuChars,
