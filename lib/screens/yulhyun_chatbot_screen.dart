@@ -6,6 +6,7 @@ import '../services/storage_service.dart';
 import '../services/ad_service.dart';
 import '../models/saju_chars.dart';
 import 'saju_input_screen.dart'; // Added import for SajuInputScreen
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class YulhyunChatbotScreen extends StatefulWidget {
   final String name;
@@ -504,7 +505,7 @@ $birthInfo에 태어나신 $name님의 운세를 상담해드리겠습니다.
 
 율현 법사로서 친근하고 전문적인 답변을 해주세요. 사주명리학 지식을 바탕으로 하되, 너무 복잡하지 않게 설명해주세요.
 
-답변은 50자 내외로 간결하게 해주세요.
+답변은 200~400자 내외로 간결하게 해주세요.
 ''';
 
     try {
@@ -530,27 +531,24 @@ $birthInfo에 태어나신 $name님의 운세를 상담해드리겠습니다.
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF1A237E),
+      backgroundColor: const Color(0xFF0B0E1A),
       appBar: AppBar(
-        backgroundColor: const Color(0xFF1A237E),
+        backgroundColor: const Color(0xFF0D1021),
         elevation: 0,
         title: const Text(
-                  '율현 법사',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
+          '율현 법사',
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
             color: Colors.white,
           ),
         ),
         actions: [
           TextButton.icon(
             onPressed: _confirmChangeProfile,
-            icon: const Icon(Icons.edit, color: Colors.white, size: 20),
+            icon: const Icon(Icons.edit, color: Colors.white, size: 18),
             label: const Text(
               '사주 정보 변경',
-              style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
-            ),
-            style: TextButton.styleFrom(
-              foregroundColor: Colors.white,
+              style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w700),
             ),
           ),
           if (_remainingQuestions <= 0)
@@ -559,7 +557,7 @@ $birthInfo에 태어나신 $name님의 운세를 상담해드리겠습니다.
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
-                  color: Colors.orange,
+                  color: const Color(0xFF8C6A00),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: const Text(
@@ -576,7 +574,7 @@ $birthInfo에 태어나신 $name님의 운세를 상담해드리겠습니다.
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
-                color: Colors.green,
+                color: const Color(0x3322FF88),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Text(
@@ -585,117 +583,130 @@ $birthInfo에 태어나신 $name님의 운세를 상담해드리겠습니다.
                   color: Colors.white,
                   fontSize: 12,
                   fontWeight: FontWeight.bold,
+                ),
               ),
             ),
-          ),
         ],
       ),
-      body: SafeArea(
-        child: Column(
-          children: [
-            // 사주 정보 표시
-            Container(
-              margin: const EdgeInsets.all(16),
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.2),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    '${widget.name}님의 사주',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    widget.sajuChars.display,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            
-            // 채팅 메시지 목록
-            Expanded(
-              child: ListView.builder(
-                controller: _scrollController,
-                padding: const EdgeInsets.all(16),
-                itemCount: _messages.length + (_isLoading ? 1 : 0),
-                itemBuilder: (context, index) {
-                  if (index == _messages.length && _isLoading) {
-                    return _buildTypingIndicator();
-                  }
-                  return _buildMessage(_messages[index]);
-                },
-              ),
-            ),
-            
-            // 배너 광고 영역
-            if (_bannerAdWidget != null)
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Color(0xFF0B0E1A), Color(0xFF101426), Color(0xFF12162A)],
+          ),
+        ),
+        child: SafeArea(
+          child: Column(
+            children: [
+              // 사주 정보 표시
               Container(
-                width: double.infinity,
-                height: 50,
-                child: _bannerAdWidget!,
-              ),
-            
-            // 메시지 입력 영역
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
-                    blurRadius: 10,
-                    offset: const Offset(0, -2),
-                  ),
-                ],
-              ),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: _messageController,
-                      enabled: _remainingQuestions > 0,
-                      decoration: InputDecoration(
-                        hintText: _remainingQuestions > 0 
-                          ? '질문을 입력하세요...'
-                          : '광고 시청 후 질문 가능',
-                        border: const OutlineInputBorder(
-                          borderRadius: BorderRadius.all(Radius.circular(24)),
-                        ),
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 12,
+                margin: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(16),
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: const Color(0x11FFFFFF),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: const Color(0x22FFFFFF)),
+                  boxShadow: const [
+                    BoxShadow(color: Color(0x33000000), blurRadius: 10, offset: Offset(0, 6)),
+                  ],
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFD4AF37),
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: const [BoxShadow(color: Color(0x55D4AF37), blurRadius: 12, spreadRadius: 1)],
+                      ),
+                      child: Text(
+                        '${(widget.name.isEmpty ? '고객님' : widget.name)}님의 사주',
+                        style: const TextStyle(
+                          color: Colors.black,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 1.0,
                         ),
                       ),
-                      onSubmitted: (_) => _sendMessage(),
                     ),
-                  ),
-                  const SizedBox(width: 8),
-                  IconButton(
-                    onPressed: _isLoading ? null : _sendMessage,
-                    icon: Icon(
-                        Icons.send,
-                      color: _remainingQuestions > 0 
-                        ? const Color(0xFF1A237E)
-                        : Colors.green,
+                    const SizedBox(height: 12),
+                    Text(
+                      widget.sajuChars.display,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-          ],
+              const SizedBox(height: 8),
+              // 채팅 메시지 목록
+              Expanded(
+                child: ListView.builder(
+                  controller: _scrollController,
+                  padding: const EdgeInsets.all(16),
+                  itemCount: _messages.length + (_isLoading ? 1 : 0),
+                  itemBuilder: (context, index) {
+                    if (index == _messages.length && _isLoading) {
+                      return _buildTypingIndicator();
+                    }
+                    return _buildMessage(_messages[index]);
+                  },
+                ),
+              ),
+              // 메시지 입력 영역
+              Container(
+                padding: const EdgeInsets.all(14),
+                decoration: const BoxDecoration(
+                  color: Color(0xFF0D1021),
+                  boxShadow: [BoxShadow(color: Color(0x33000000), blurRadius: 8, offset: Offset(0, -2))],
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: _messageController,
+                        enabled: _remainingQuestions > 0,
+                        decoration: InputDecoration(
+                          hintText: _remainingQuestions > 0 ? '무엇이 궁금하신가요…' : '광고 시청 후 질문 가능',
+                          hintStyle: const TextStyle(color: Colors.white54),
+                          filled: true,
+                          fillColor: const Color(0x22FFFFFF),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(24),
+                            borderSide: const BorderSide(color: Color(0x33FFFFFF)),
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        ),
+                        onSubmitted: (_) => _sendMessage(),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    IconButton(
+                      onPressed: _isLoading ? null : _sendMessage,
+                      icon: Icon(
+                        Icons.send,
+                        color: _remainingQuestions > 0 ? const Color(0xFFD4AF37) : const Color(0xFF8C6A00),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              // 배너 광고 영역 (입력창 아래 실제 위치)
+              if (_bannerAdWidget != null)
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.only(top: 6, bottom: 6),
+                  child: _bannerAdWidget!,
+                ),
+            ],
+          ),
         ),
       ),
     );
@@ -710,12 +721,8 @@ $birthInfo에 태어나신 $name님의 운세를 상담해드리겠습니다.
         children: [
           if (!message.isUser) ...[
             CircleAvatar(
-              backgroundColor: const Color(0xFF1A237E),
-              child: const Icon(
-                Icons.psychology,
-                  color: Colors.white,
-                size: 20,
-              ),
+              backgroundColor: const Color(0xFFD4AF37),
+              child: const FaIcon(FontAwesomeIcons.yinYang, color: Colors.black, size: 18),
             ),
             const SizedBox(width: 8),
           ],
@@ -723,15 +730,10 @@ $birthInfo에 태어나신 $name님의 운세를 상담해드리겠습니다.
             child: Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: message.isUser ? const Color(0xFF1A237E) : Colors.white,
+                color: message.isUser ? const Color(0x3322FF88) : const Color(0x11FFFFFF),
                 borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
-                    blurRadius: 5,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
+                border: Border.all(color: message.isUser ? const Color(0x5522FF88) : const Color(0x22FFFFFF)),
+                boxShadow: const [BoxShadow(color: Color(0x22000000), blurRadius: 6, offset: Offset(0, 3))],
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -741,9 +743,9 @@ $birthInfo에 태어나신 $name님의 운세를 상담해드리겠습니다.
                         ? message.text.substring(0, message.typingIndex)
                         : message.text,
                     style: TextStyle(
-                      color: message.isUser ? Colors.white : Colors.black87,
+                      color: message.isUser ? Colors.white : Colors.white,
                       fontSize: 14,
-                      height: 1.4,
+                      height: 1.5,
                     ),
                   ),
                   if (message.isTyping) ...[
@@ -757,7 +759,7 @@ $birthInfo에 태어나신 $name님의 운세를 상담해드리겠습니다.
                             width: 8,
                             height: 16,
                             decoration: BoxDecoration(
-                              color: message.isUser ? Colors.white : Colors.black87,
+                              color: Colors.white,
                               borderRadius: BorderRadius.circular(2),
                             ),
                           ),
@@ -772,12 +774,8 @@ $birthInfo에 태어나신 $name님의 운세를 상담해드리겠습니다.
           if (message.isUser) ...[
             const SizedBox(width: 8),
             CircleAvatar(
-              backgroundColor: Colors.grey.shade300,
-              child: const Icon(
-                Icons.person,
-                color: Colors.white,
-                size: 20,
-              ),
+              backgroundColor: const Color(0xFF22263D),
+              child: const FaIcon(FontAwesomeIcons.yinYang, color: Color(0xFFD4AF37), size: 18),
             ),
           ],
         ],
@@ -792,29 +790,20 @@ $birthInfo에 태어나신 $name님의 운세를 상담해드리겠습니다.
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           CircleAvatar(
-            backgroundColor: const Color(0xFF1A237E),
-            child: const Icon(
-              Icons.psychology,
-                color: Colors.white,
-              size: 20,
-            ),
+            backgroundColor: const Color(0xFFD4AF37),
+            child: const FaIcon(FontAwesomeIcons.yinYang, color: Colors.black, size: 18),
           ),
           const SizedBox(width: 8),
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: const Color(0x11FFFFFF),
               borderRadius: BorderRadius.circular(16),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
-                  blurRadius: 5,
-                  offset: const Offset(0, 2),
-                ),
-              ],
+              border: Border.all(color: const Color(0x22FFFFFF)),
+              boxShadow: const [BoxShadow(color: Color(0x22000000), blurRadius: 6, offset: Offset(0, 3))],
             ),
             child: Row(
-                  mainAxisSize: MainAxisSize.min,
+              mainAxisSize: MainAxisSize.min,
               children: [
                 _buildDot(0),
                 const SizedBox(width: 4),
@@ -833,14 +822,14 @@ $birthInfo에 태어나신 $name님의 운세를 상담해드리겠습니다.
     return AnimatedBuilder(
       animation: _typingAnimationController,
       builder: (context, child) {
-                    final delay = index * 0.2;
+        final delay = index * 0.2;
         final animationValue = math.max(0.0, _typingAnimationController.value - delay);
         
-                    return Container(
-                      width: 8,
-                      height: 8,
-                      decoration: BoxDecoration(
-            color: const Color(0xFF1A237E).withOpacity(0.3 + (0.7 * animationValue)),
+        return Container(
+          width: 8,
+          height: 8,
+          decoration: BoxDecoration(
+            color: const Color(0xFFD4AF37).withOpacity(0.3 + (0.6 * animationValue)),
             shape: BoxShape.circle,
           ),
         );

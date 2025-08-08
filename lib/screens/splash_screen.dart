@@ -5,6 +5,7 @@ import '../services/storage_service.dart';
 import '../services/saju_calculator.dart';
 import '../models/saju_chars.dart';
 import 'yulhyun_chatbot_screen.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -119,66 +120,74 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF1A237E), // 진한 인디고 색상
-      body: Center(
-        child: FadeTransition(
-          opacity: _fadeAnimation,
-          child: ScaleTransition(
-            scale: _scaleAnimation,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                // 앱 아이콘
-                Container(
-                  width: 120,
-                  height: 120,
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(20),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.3),
-                        blurRadius: 10,
-                        offset: const Offset(0, 5),
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Color(0xFF0B0E1A),
+              Color(0xFF101426),
+              Color(0xFF12162A),
+              Color(0xFF0D1021),
+            ],
+          ),
+        ),
+        child: Center(
+          child: FadeTransition(
+            opacity: _fadeAnimation,
+            child: ScaleTransition(
+              scale: _scaleAnimation,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  // 상징 아이콘 (글로우)
+                  Container(
+                    width: 140,
+                    height: 140,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: const RadialGradient(
+                        colors: [Color(0x33D4AF37), Color(0x11000000)],
                       ),
-                    ],
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0x66D4AF37),
+                          blurRadius: 30,
+                          spreadRadius: 5,
+                        ),
+                      ],
+                    ),
+                    child: const Center(
+                      child: FaIcon(FontAwesomeIcons.yinYang, size: 64, color: Color(0xFFD4AF37)),
+                    ),
                   ),
-                  child: const Icon(
-                    Icons.psychology,
-                    size: 60,
-                    color: Color(0xFF1A237E),
+                  const SizedBox(height: 28),
+                  const Text(
+                    '율현 법사',
+                    style: TextStyle(
+                      fontSize: 34,
+                      fontWeight: FontWeight.w800,
+                      color: Colors.white,
+                      letterSpacing: 3.0,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 32),
-                
-                // 앱 제목
-                const Text(
-                  '율현 법사',
-                  style: TextStyle(
-                    fontSize: 32,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                    letterSpacing: 2.0,
+                  const SizedBox(height: 18),
+                  const Text(
+                    '신내림 받은 율현법사와\n당신의 운명에 대해서 얘기해보세요',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.white70,
+                      letterSpacing: 1.2,
+                    ),
+                    textAlign: TextAlign.center,
                   ),
-                ),
-                const SizedBox(height: 8),
-                
-                // 부제목
-                const Text(
-                  'AI 기반 사주 상담',
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.white70,
-                    letterSpacing: 1.0,
+                  const SizedBox(height: 40),
+                  const CircularProgressIndicator(
+                    valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFD4AF37)),
                   ),
-                ),
-                const SizedBox(height: 48),
-                
-                // 로딩 인디케이터
-                const CircularProgressIndicator(
-                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),

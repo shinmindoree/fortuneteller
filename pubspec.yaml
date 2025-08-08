@@ -55,7 +55,7 @@ dependencies:
   table_calendar: ^3.0.9
   
   # Local storage and preferences
-  shared_preferences: ^2.2.2
+  shared_preferences: ^2.2.3
   flutter_secure_storage: ^9.0.0
   
   # Notifications
@@ -68,13 +68,16 @@ dependencies:
   flutter_dotenv: ^5.1.0
   
   # Permissions
-  permission_handler: ^11.3.1
+  permission_handler: ^11.4.0
   
   # JSON handling
   json_annotation: ^4.8.1
   
   # AdMob for ads
   google_mobile_ads: ^6.0.0
+  # 폰트
+  google_fonts: ^6.2.1
+  font_awesome_flutter: ^10.7.0
 
 dev_dependencies:
   flutter_test:
