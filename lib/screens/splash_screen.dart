@@ -6,6 +6,7 @@ import '../services/saju_calculator.dart';
 import '../models/saju_chars.dart';
 import 'yulhyun_chatbot_screen.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import '../services/ad_service.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -59,6 +60,12 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
     _scaleController.forward();
     
     Timer(const Duration(seconds: 3), () async {
+      // 스플래시 종료 시 전면(App Open) 광고 표시 시도
+      try {
+        final shown = await AdService.instance.showAppOpenAd();
+        debugPrint('AppOpen 표시 결과: $shown');
+      } catch (_) {}
+
       final profile = await StorageService.instance.getSajuProfile();
       if (!mounted) return;
       if (profile != null) {
