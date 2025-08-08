@@ -4,6 +4,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'services/supabase_service.dart';
 import 'services/storage_service.dart';
 import 'services/auth_service.dart';
+import 'services/ad_service.dart';
 import 'screens/splash_screen.dart';
 import 'screens/saju_input_screen.dart';
 
@@ -22,6 +23,9 @@ Future<void> main() async {
     
     // Initialize Auth Service
     await AuthService.instance.initialize();
+    
+    // Initialize Ad Service
+    await AdService.instance.initialize();
     
     runApp(const FortuneTellerApp());
   } catch (e) {

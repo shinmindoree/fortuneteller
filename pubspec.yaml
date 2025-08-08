@@ -72,6 +72,9 @@ dependencies:
   
   # JSON handling
   json_annotation: ^4.8.1
+  
+  # AdMob for ads
+  google_mobile_ads: ^6.0.0
 
 dev_dependencies:
   flutter_test:

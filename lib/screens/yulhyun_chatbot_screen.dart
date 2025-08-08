@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'dart:math' as math;
 import '../services/openai_service.dart';
 import '../services/storage_service.dart';
+import '../services/ad_service.dart';
 import '../models/saju_chars.dart';
 
 class YulhyunChatbotScreen extends StatefulWidget {
@@ -38,6 +39,7 @@ class _YulhyunChatbotScreenState extends State<YulhyunChatbotScreen>
   bool _isTyping = false;
   late AnimationController _typingAnimationController;
   late AnimationController _cursorAnimationController;
+  Widget? _bannerAdWidget;
 
   @override
   void initState() {
@@ -53,6 +55,7 @@ class _YulhyunChatbotScreenState extends State<YulhyunChatbotScreen>
     
     // 저장된 사용 횟수 로드
     _loadUsageCount();
+    _loadBannerAd();
     
     // 율현 법사 인사말
     _addWelcomeMessage();
@@ -120,19 +123,19 @@ $birthInfo에 태어나신 $name님의 운세를 상담해드리겠습니다.
     }
 
     // 사용자 메시지 추가
-    _messages.add(ChatMessage(
+        _messages.add(ChatMessage(
       text: message,
-      isUser: true,
-      timestamp: DateTime.now(),
-    ));
+          isUser: true,
+          timestamp: DateTime.now(),
+        ));
 
-    _messageController.clear();
+        _messageController.clear();
     _scrollToBottom();
 
-    setState(() {
-      _isLoading = true;
-      _remainingQuestions--;
-    });
+      setState(() {
+        _isLoading = true;
+        _remainingQuestions--;
+      });
 
     // 사용 횟수 저장
     await _saveUsageCount();
@@ -142,24 +145,24 @@ $birthInfo에 태어나신 $name님의 운세를 상담해드리겠습니다.
       final response = await _generateAIResponse(message);
       
       if (mounted) {
-        setState(() {
-          _messages.add(ChatMessage(
-            text: response,
-            isUser: false,
-            timestamp: DateTime.now(),
+      setState(() {
+        _messages.add(ChatMessage(
+          text: response,
+          isUser: false,
+          timestamp: DateTime.now(),
             isTyping: true,
-          ));
+        ));
           _isLoading = false;
-        });
-        _scrollToBottom();
-        
+      });
+      _scrollToBottom();
+      
         // 타이핑 효과 시작
-        _startTypingEffect(_messages.length - 1);
+      _startTypingEffect(_messages.length - 1);
       }
     } catch (e) {
       if (mounted) {
-        setState(() {
-          _isLoading = false;
+      setState(() {
+        _isLoading = false;
         });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -193,57 +196,63 @@ $birthInfo에 태어나신 $name님의 운세를 상담해드리겠습니다.
             ),
           ],
         ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              '무료 질문을 모두 사용하셨습니다!',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 12),
-            const Text(
-              '짧은 광고를 시청하시면:',
-              style: TextStyle(
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-            const SizedBox(height: 8),
-            _buildFeatureItem('10번의 무료 질문을 다시 받을 수 있습니다'),
-            _buildFeatureItem('즉시 사용 가능'),
-            _buildFeatureItem('무료 서비스'),
-            const SizedBox(height: 16),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.green.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(
-                  color: Colors.green.withOpacity(0.3),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                '무료 질문을 모두 사용하셨습니다!',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
-              child: const Row(
-                children: [
-                  Icon(
-                    Icons.timer,
-                    color: Colors.green,
-                    size: 20,
-                  ),
-                  SizedBox(width: 8),
-                  Text(
-                    '약 30초 소요',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: Colors.green,
-                    ),
-                  ),
-                ],
+              const SizedBox(height: 12),
+              const Text(
+                '짧은 광고를 시청하시면:',
+                style: TextStyle(
+                  fontWeight: FontWeight.w500,
+                ),
               ),
-            ),
-          ],
+              const SizedBox(height: 8),
+              _buildFeatureItem('10번의 무료 질문을 다시 받을 수 있습니다'),
+              _buildFeatureItem('즉시 사용 가능'),
+              _buildFeatureItem('무료 서비스'),
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.green.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: Colors.green.withOpacity(0.3),
+                  ),
+                ),
+                child: const Row(
+                  children: [
+                    Icon(
+                      Icons.timer,
+                      color: Colors.green,
+                      size: 20,
+                    ),
+                    SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        '약 30초 소요',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Colors.green,
+                        ),
+                        overflow: TextOverflow.visible,
+                        softWrap: true,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
         actions: [
           TextButton(
@@ -252,6 +261,14 @@ $birthInfo에 태어나신 $name님의 운세를 상담해드리겠습니다.
           ),
           ElevatedButton(
             onPressed: () {
+              print('🖱️ 광고 시청 버튼 클릭됨 - print');
+              debugPrint('🖱️ 광고 시청 버튼 클릭됨 - debugPrint');
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('버튼이 클릭되었습니다!'),
+                  duration: Duration(seconds: 2),
+                ),
+              );
               Navigator.of(context).pop();
               _watchAd();
             },
@@ -268,50 +285,94 @@ $birthInfo에 태어나신 $name님의 운세를 상담해드리겠습니다.
 
   /// 광고 시청 처리
   Future<void> _watchAd() async {
-    // 광고 시청 시뮬레이션 (실제로는 광고 SDK 연동 필요)
+    debugPrint('🎬 _watchAd 함수 시작');
+    
+    // 광고 로드 중 다이얼로그 표시
     showDialog(
       context: context,
       barrierDismissible: false,
       builder: (context) => AlertDialog(
-        title: const Text('광고 시청 중...'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const CircularProgressIndicator(
-              valueColor: AlwaysStoppedAnimation<Color>(Colors.green),
-            ),
-            const SizedBox(height: 16),
-            const Text('광고를 시청하고 있습니다...'),
-            const SizedBox(height: 8),
-            const Text(
-              '잠시만 기다려주세요',
-              style: TextStyle(
-                color: Colors.grey,
-                fontSize: 12,
+        title: const Text('광고 로드 중...'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(Colors.green),
               ),
-            ),
-          ],
+              const SizedBox(height: 16),
+              const Text('광고를 준비하고 있습니다...'),
+              const SizedBox(height: 8),
+              const Text(
+                '잠시만 기다려주세요',
+                style: TextStyle(
+                  color: Colors.grey,
+                  fontSize: 12,
+                ),
+                overflow: TextOverflow.visible,
+                softWrap: true,
+              ),
+            ],
+          ),
         ),
       ),
     );
 
-    // 3초 후 광고 시청 완료 (실제로는 광고 완료 콜백에서 처리)
-    await Future.delayed(const Duration(seconds: 3));
-    
-    if (mounted) {
-      Navigator.of(context).pop(); // 로딩 다이얼로그 닫기
+    try {
+      debugPrint('🔄 광고 로드 시작...');
+      // 광고 로드
+      await AdService.instance.loadRewardedAd();
+      debugPrint('✅ 광고 로드 완료');
       
-      // 사용 횟수 리셋
-      await _resetUsageCount();
-      
-      // 성공 메시지 표시
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('광고 시청 완료! 10번의 무료 질문을 다시 받으셨습니다.'),
-          backgroundColor: Colors.green,
-          duration: Duration(seconds: 3),
-        ),
-      );
+      if (mounted) {
+        debugPrint('🔄 로딩 다이얼로그 닫기');
+        Navigator.of(context).pop(); // 로딩 다이얼로그 닫기
+        
+        debugPrint('🎬 광고 표시 시작...');
+        // 광고 표시
+        final adWatched = await AdService.instance.showRewardedAd();
+        debugPrint('✅ 광고 표시 완료, 시청 여부: $adWatched');
+        
+        if (adWatched) {
+          debugPrint('🎁 광고 시청 완료, 사용 횟수 리셋 시작');
+          // 광고 시청 완료 시 사용 횟수 리셋
+          await _resetUsageCount();
+          
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('광고 시청 완료! 10번의 무료 질문을 다시 받으셨습니다.'),
+                backgroundColor: Colors.green,
+                duration: Duration(seconds: 3),
+              ),
+            );
+          }
+        } else {
+          debugPrint('❌ 광고 시청 실패');
+          // 광고 로드 실패 시
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('광고 로드에 실패했습니다. 잠시 후 다시 시도해주세요.'),
+                backgroundColor: Colors.orange,
+                duration: Duration(seconds: 3),
+              ),
+            );
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint('❌ 광고 시청 중 오류 발생: $e');
+      if (mounted) {
+        Navigator.of(context).pop(); // 로딩 다이얼로그 닫기
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('광고 시청 중 오류가 발생했습니다: $e'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
     }
   }
 
@@ -332,6 +393,7 @@ $birthInfo에 태어나신 $name님의 운세를 상담해드리겠습니다.
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 2),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Icon(
             Icons.check_circle,
@@ -339,12 +401,34 @@ $birthInfo에 태어나신 $name님의 운세를 상담해드리겠습니다.
             size: 16,
           ),
           const SizedBox(width: 8),
-          Text(text),
+          Expanded(
+            child: Text(
+              text,
+              softWrap: true,
+              overflow: TextOverflow.visible,
+            ),
+          ),
         ],
       ),
     );
   }
 
+  Future<void> _loadBannerAd() async {
+    try {
+      debugPrint('🔄 배너 광고 로드 시작...');
+      final bannerAd = await AdService.instance.loadBannerAd();
+      if (bannerAd != null && mounted) {
+        setState(() {
+          _bannerAdWidget = AdService.instance.getBannerAdWidget();
+        });
+        debugPrint('✅ 배너 광고 로드 완료');
+      } else {
+        debugPrint('❌ 배너 광고 로드 실패');
+      }
+    } catch (e) {
+      debugPrint('❌ 배너 광고 로드 중 오류: $e');
+    }
+  }
 
 
   void _startTypingEffect(int messageIndex) {
@@ -445,8 +529,10 @@ $birthInfo에 태어나신 $name님의 운세를 상담해드리겠습니다.
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F5F5),
+      backgroundColor: const Color(0xFF1A237E),
       appBar: AppBar(
+        backgroundColor: const Color(0xFF1A237E),
+        elevation: 0,
         title: const Text(
           '율현 법사',
           style: TextStyle(
@@ -454,57 +540,68 @@ $birthInfo에 태어나신 $name님의 운세를 상담해드리겠습니다.
             color: Colors.white,
           ),
         ),
-        backgroundColor: const Color(0xFF1A237E),
-        elevation: 0,
-        centerTitle: true,
         actions: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-            margin: const EdgeInsets.only(right: 16),
-            decoration: BoxDecoration(
-              color: _remainingQuestions > 0 
-                  ? Colors.white.withOpacity(0.2)
-                  : Colors.green.withOpacity(0.8),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Text(
-              _remainingQuestions > 0 
-                  ? '남은 질문: $_remainingQuestions'
-                  : '광고 시청',
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 12,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-        ],
-      ),
-      body: Column(
-        children: [
-          // 사주 정보 표시
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(16),
-            color: const Color(0xFF1A237E),
-            child: Column(
-              children: [
-                Text(
-                  '${widget.name}님의 사주',
-                  style: const TextStyle(
+          if (_remainingQuestions <= 0)
+            TextButton(
+              onPressed: _showAdDialog,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: Colors.orange,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Text(
+                  '광고 시청',
+                  style: TextStyle(
                     color: Colors.white,
-                    fontSize: 16,
+                    fontSize: 12,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                const SizedBox(height: 8),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+          if (_remainingQuestions > 0)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: Colors.green,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                '남은 질문: $_remainingQuestions',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+        ],
+      ),
+      body: SafeArea(
+        child: Column(
+          children: [
+            // 사주 정보 표시
+            Container(
+              margin: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '${widget.name}님의 사주',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
-                  child: Text(
+                  const SizedBox(height: 8),
+                  Text(
                     widget.sajuChars.display,
                     style: const TextStyle(
                       color: Colors.white,
@@ -512,80 +609,82 @@ $birthInfo에 태어나신 $name님의 운세를 상담해드리겠습니다.
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-          
-          // 채팅 메시지 목록
-          Expanded(
-            child: ListView.builder(
-              controller: _scrollController,
+            
+            // 채팅 메시지 목록
+            Expanded(
+              child: ListView.builder(
+                controller: _scrollController,
+                padding: const EdgeInsets.all(16),
+                itemCount: _messages.length + (_isLoading ? 1 : 0),
+                itemBuilder: (context, index) {
+                  if (index == _messages.length && _isLoading) {
+                    return _buildTypingIndicator();
+                  }
+                  return _buildMessage(_messages[index]);
+                },
+              ),
+            ),
+            
+            // 배너 광고 영역
+            if (_bannerAdWidget != null)
+              Container(
+                width: double.infinity,
+                height: 50,
+                child: _bannerAdWidget!,
+              ),
+            
+            // 메시지 입력 영역
+            Container(
               padding: const EdgeInsets.all(16),
-              itemCount: _messages.length + (_isLoading ? 1 : 0),
-              itemBuilder: (context, index) {
-                if (index == _messages.length && _isLoading) {
-                  return _buildTypingIndicator();
-                }
-                return _buildMessage(_messages[index]);
-              },
-            ),
-          ),
-          
-          // 메시지 입력 영역
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
-                  blurRadius: 10,
-                  offset: const Offset(0, -2),
-                ),
-              ],
-            ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _messageController,
-                    enabled: _remainingQuestions > 0,
-                    decoration: InputDecoration(
-                      hintText: _remainingQuestions > 0 
+              decoration: BoxDecoration(
+                color: Colors.white,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 10,
+                    offset: const Offset(0, -2),
+                  ),
+                ],
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _messageController,
+                      enabled: _remainingQuestions > 0,
+                      decoration: InputDecoration(
+                        hintText: _remainingQuestions > 0 
                           ? '질문을 입력하세요...'
                           : '광고 시청 후 질문 가능',
-                      border: const OutlineInputBorder(
-                        borderRadius: BorderRadius.all(Radius.circular(24)),
+                        border: const OutlineInputBorder(
+                          borderRadius: BorderRadius.all(Radius.circular(24)),
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 12,
+                        ),
                       ),
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 12,
-                      ),
+                      onSubmitted: (_) => _sendMessage(),
                     ),
-                    onSubmitted: (_) => _sendMessage(),
                   ),
-                ),
-                const SizedBox(width: 8),
-                IconButton(
-                  onPressed: _isLoading ? null : _sendMessage,
-                  icon: _isLoading
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                                             : Icon(
-                           _remainingQuestions > 0 ? Icons.send : Icons.play_circle,
-                           color: _remainingQuestions > 0 
-                               ? const Color(0xFF1A237E)
-                               : Colors.green,
-                         ),
-                ),
-              ],
+                  const SizedBox(width: 8),
+                  IconButton(
+                    onPressed: _isLoading ? null : _sendMessage,
+                    icon: Icon(
+                      Icons.send,
+                      color: _remainingQuestions > 0 
+                        ? const Color(0xFF1A237E)
+                        : Colors.green,
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -602,7 +701,7 @@ $birthInfo에 태어나신 $name님의 운세를 상담해드리겠습니다.
               backgroundColor: const Color(0xFF1A237E),
               child: const Icon(
                 Icons.psychology,
-                color: Colors.white,
+                  color: Colors.white,
                 size: 20,
               ),
             ),
@@ -684,7 +783,7 @@ $birthInfo에 태어나신 $name님의 운세를 상담해드리겠습니다.
             backgroundColor: const Color(0xFF1A237E),
             child: const Icon(
               Icons.psychology,
-              color: Colors.white,
+                color: Colors.white,
               size: 20,
             ),
           ),
@@ -703,7 +802,7 @@ $birthInfo에 태어나신 $name님의 운세를 상담해드리겠습니다.
               ],
             ),
             child: Row(
-              mainAxisSize: MainAxisSize.min,
+                  mainAxisSize: MainAxisSize.min,
               children: [
                 _buildDot(0),
                 const SizedBox(width: 4),
