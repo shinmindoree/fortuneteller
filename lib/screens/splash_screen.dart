@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
 import 'saju_input_screen.dart';
+import '../services/storage_service.dart';
+import '../services/saju_calculator.dart';
+import '../models/saju_chars.dart';
+import 'yulhyun_chatbot_screen.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -53,7 +57,46 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
     await Future.delayed(const Duration(milliseconds: 500));
     _scaleController.forward();
     
-    Timer(const Duration(seconds: 3), () {
+    Timer(const Duration(seconds: 3), () async {
+      final profile = await StorageService.instance.getSajuProfile();
+      if (!mounted) return;
+      if (profile != null) {
+        try {
+          final name = profile['name'] as String? ?? '';
+          final birthDate = DateTime.parse(profile['birthDate'] as String);
+          final hour = (profile['hour'] as num).toInt();
+          final minute = (profile['minute'] as num).toInt();
+          final gender = profile['gender'] as String? ?? '남성';
+          final isLunar = profile['isLunar'] as bool? ?? false;
+
+          final sajuChars = SajuCalculator.instance.calculateSaju(
+            birthDate: birthDate,
+            hour: hour,
+            minute: minute,
+            isLunar: isLunar,
+            gender: gender,
+          );
+
+          Navigator.of(context).pushReplacement(
+            PageRouteBuilder(
+              pageBuilder: (context, animation, secondaryAnimation) => YulhyunChatbotScreen(
+                name: name,
+                birthDate: birthDate,
+                birthTime: TimeOfDay(hour: hour, minute: minute),
+                gender: gender,
+                isLunar: isLunar,
+                sajuChars: sajuChars,
+              ),
+              transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                return FadeTransition(opacity: animation, child: child);
+              },
+              transitionDuration: const Duration(milliseconds: 500),
+            ),
+          );
+          return;
+        } catch (_) {}
+      }
+
       Navigator.of(context).pushReplacement(
         PageRouteBuilder(
           pageBuilder: (context, animation, secondaryAnimation) => const SajuInputScreen(),

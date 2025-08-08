@@ -5,6 +5,7 @@ import '../services/openai_service.dart';
 import '../services/storage_service.dart';
 import '../services/ad_service.dart';
 import '../models/saju_chars.dart';
+import 'saju_input_screen.dart'; // Added import for SajuInputScreen
 
 class YulhyunChatbotScreen extends StatefulWidget {
   final String name;
@@ -534,13 +535,24 @@ $birthInfo에 태어나신 $name님의 운세를 상담해드리겠습니다.
         backgroundColor: const Color(0xFF1A237E),
         elevation: 0,
         title: const Text(
-          '율현 법사',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
+                  '율현 법사',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
             color: Colors.white,
           ),
         ),
         actions: [
+          TextButton.icon(
+            onPressed: _confirmChangeProfile,
+            icon: const Icon(Icons.edit, color: Colors.white, size: 20),
+            label: const Text(
+              '사주 정보 변경',
+              style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
+            ),
+            style: TextButton.styleFrom(
+              foregroundColor: Colors.white,
+            ),
+          ),
           if (_remainingQuestions <= 0)
             TextButton(
               onPressed: _showAdDialog,
@@ -573,9 +585,9 @@ $birthInfo에 태어나신 $name님의 운세를 상담해드리겠습니다.
                   color: Colors.white,
                   fontSize: 12,
                   fontWeight: FontWeight.bold,
-                ),
               ),
             ),
+          ),
         ],
       ),
       body: SafeArea(
@@ -674,7 +686,7 @@ $birthInfo에 태어나신 $name님의 운세를 상담해드리겠습니다.
                   IconButton(
                     onPressed: _isLoading ? null : _sendMessage,
                     icon: Icon(
-                      Icons.send,
+                        Icons.send,
                       color: _remainingQuestions > 0 
                         ? const Color(0xFF1A237E)
                         : Colors.green,
@@ -821,18 +833,49 @@ $birthInfo에 태어나신 $name님의 운세를 상담해드리겠습니다.
     return AnimatedBuilder(
       animation: _typingAnimationController,
       builder: (context, child) {
-        final delay = index * 0.2;
+                    final delay = index * 0.2;
         final animationValue = math.max(0.0, _typingAnimationController.value - delay);
         
-        return Container(
-          width: 8,
-          height: 8,
-          decoration: BoxDecoration(
+                    return Container(
+                      width: 8,
+                      height: 8,
+                      decoration: BoxDecoration(
             color: const Color(0xFF1A237E).withOpacity(0.3 + (0.7 * animationValue)),
             shape: BoxShape.circle,
           ),
         );
       },
+    );
+  }
+
+  Future<void> _confirmChangeProfile() async {
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('사주 정보 변경'),
+        content: const Text('사주 정보를 변경하시겠습니까?\n저장된 프로필을 초기화하고 다시 입력합니다.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('취소'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('초기화 후 변경'),
+          ),
+        ],
+      ),
+    );
+
+    if (!mounted) return;
+
+    if (result == true) {
+      // 저장된 프로필 삭제 후 입력 화면으로 이동
+      await StorageService.instance.deleteSajuProfile();
+    }
+
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(builder: (_) => const SajuInputScreen()),
     );
   }
 }

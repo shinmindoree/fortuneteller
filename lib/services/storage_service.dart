@@ -14,6 +14,7 @@ class StorageService {
   static const String _keyAnalysisList = 'saved_analysis_list';
   static const String _keyCurrentAnalysis = 'current_analysis';
   static const String _keyGoodDayEvents = 'good_day_events';
+  static const String _keySajuProfile = 'user_saju_profile';
   
   SharedPreferences? _prefs;
   
@@ -37,6 +38,61 @@ class StorageService {
   
   /// 외부에서 SharedPreferences 접근용 (FortuneService에서 사용)
   Future<SharedPreferences> get preferences => _preferences;
+
+  // --------------------
+  // 사주 프로필 저장/로드/삭제
+  // --------------------
+  Future<bool> saveSajuProfile({
+    required String name,
+    required DateTime birthDate,
+    required int hour,
+    required int minute,
+    required String gender,
+    required bool isLunar,
+  }) async {
+    try {
+      final prefs = await _preferences;
+      final profile = {
+        'name': name,
+        'birthDate': birthDate.toIso8601String(),
+        'hour': hour,
+        'minute': minute,
+        'gender': gender,
+        'isLunar': isLunar,
+      };
+      final success = await prefs.setString(_keySajuProfile, jsonEncode(profile));
+      debugPrint(success ? '💾 사주 프로필 저장 완료' : '❌ 사주 프로필 저장 실패');
+      return success;
+    } catch (e) {
+      debugPrint('❌ 사주 프로필 저장 중 오류: $e');
+      return false;
+    }
+  }
+
+  Future<Map<String, dynamic>?> getSajuProfile() async {
+    try {
+      final prefs = await _preferences;
+      final jsonStr = prefs.getString(_keySajuProfile);
+      if (jsonStr == null) return null;
+      final map = jsonDecode(jsonStr) as Map<String, dynamic>;
+      return map;
+    } catch (e) {
+      debugPrint('❌ 사주 프로필 로드 실패: $e');
+      return null;
+    }
+  }
+
+  Future<bool> deleteSajuProfile() async {
+    try {
+      final prefs = await _preferences;
+      final success = await prefs.remove(_keySajuProfile);
+      debugPrint(success ? '🗑️ 사주 프로필 삭제 완료' : '❌ 사주 프로필 삭제 실패');
+      return success;
+    } catch (e) {
+      debugPrint('❌ 사주 프로필 삭제 중 오류: $e');
+      return false;
+    }
+  }
   
   /// 사주 분석 결과 저장
   Future<bool> saveAnalysis(SavedAnalysis analysis) async {
@@ -217,6 +273,7 @@ class StorageService {
       await prefs.remove(_keyAnalysisList);
       await prefs.remove(_keyCurrentAnalysis);
       await prefs.remove(_keyGoodDayEvents);
+      await prefs.remove(_keySajuProfile);
       
       debugPrint('🧹 모든 로컬 데이터 삭제 완료');
       return true;

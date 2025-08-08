@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import '../services/saju_calculator.dart';
 import '../models/saju_chars.dart';
 import 'yulhyun_chatbot_screen.dart';
+import '../services/storage_service.dart';
 
 class SajuInputScreen extends StatefulWidget {
   const SajuInputScreen({super.key});
@@ -20,11 +21,27 @@ class _SajuInputScreenState extends State<SajuInputScreen> {
   bool _isLunar = false;
   String? _selectedGender;
   bool _isLoading = false;
+  bool _hasSavedProfile = false;
   
   @override
   void dispose() {
     _nameController.dispose();
     super.dispose();
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _checkSavedProfile();
+  }
+
+  Future<void> _checkSavedProfile() async {
+    final profile = await StorageService.instance.getSajuProfile();
+    if (mounted) {
+      setState(() {
+        _hasSavedProfile = profile != null;
+      });
+    }
   }
 
   Future<void> _selectDate() async {
@@ -109,6 +126,16 @@ class _SajuInputScreenState extends State<SajuInputScreen> {
         gender: _selectedGender!,
       );
 
+      // 입력값 로컬 저장
+      await StorageService.instance.saveSajuProfile(
+        name: _nameController.text,
+        birthDate: _selectedDate!,
+        hour: _selectedTime!.hour,
+        minute: _selectedTime!.minute,
+        gender: _selectedGender!,
+        isLunar: _isLunar,
+      );
+
       // 챗봇 화면으로 이동
       if (mounted) {
         Navigator.of(context).pushReplacement(
@@ -154,6 +181,16 @@ class _SajuInputScreenState extends State<SajuInputScreen> {
         backgroundColor: const Color(0xFF1A237E),
         elevation: 0,
         centerTitle: true,
+        actions: [
+          if (_hasSavedProfile)
+            TextButton(
+              onPressed: _startWithSaved,
+              child: const Text(
+                '이전 저장 불러오기',
+                style: TextStyle(color: Colors.white),
+              ),
+            ),
+        ],
       ),
       body: _isLoading
           ? const Center(
@@ -533,6 +570,40 @@ class _SajuInputScreenState extends State<SajuInputScreen> {
                 ),
               ),
             ),
+    );
+  }
+
+  Future<void> _startWithSaved() async {
+    final profile = await StorageService.instance.getSajuProfile();
+    if (profile == null) return;
+
+    final name = profile['name'] as String? ?? '';
+    final birthDate = DateTime.parse(profile['birthDate'] as String);
+    final hour = (profile['hour'] as num).toInt();
+    final minute = (profile['minute'] as num).toInt();
+    final gender = profile['gender'] as String? ?? '남성';
+    final isLunar = profile['isLunar'] as bool? ?? false;
+
+    final sajuChars = SajuCalculator.instance.calculateSaju(
+      birthDate: birthDate,
+      hour: hour,
+      minute: minute,
+      isLunar: isLunar,
+      gender: gender,
+    );
+
+    if (!mounted) return;
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(
+        builder: (context) => YulhyunChatbotScreen(
+          name: name,
+          birthDate: birthDate,
+          birthTime: TimeOfDay(hour: hour, minute: minute),
+          gender: gender,
+          isLunar: isLunar,
+          sajuChars: sajuChars,
+        ),
+      ),
     );
   }
 } 
