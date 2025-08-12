@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'dart:io' show Platform;
-import 'dart:async'; // Added for Completer
+import 'dart:async';
 
 /// 실제 AdMob SDK를 사용하는 광고 서비스 클래스
 class AdService {
@@ -13,25 +13,36 @@ class AdService {
   bool _isInitialized = false;
   RewardedAd? _rewardedAd;
   BannerAd? _bannerAd;
+  AppOpenAd? _appOpenAd;
   
-  // 테스트 광고 단위 ID
+  // 실제 AdMob 광고 단위 ID
   String get _rewardedAdUnitId {
     if (Platform.isAndroid) {
-      return 'ca-app-pub-3940256099942544/5224354917'; // Android 테스트 ID
+      return 'ca-app-pub-3786451504514591/7213959158'; // Android 보상형 광고 실제 ID
     } else if (Platform.isIOS) {
-      return 'ca-app-pub-3940256099942544/1712485313'; // iOS 테스트 ID
+      return 'ca-app-pub-3940256099942544/1712485313'; // iOS 보상형 광고 테스트 ID (iOS 실제 ID로 교체 필요)
     } else {
-      return 'ca-app-pub-3940256099942544/5224354917'; // 기본값
+      return 'ca-app-pub-3786451504514591/7213959158'; // 기본값
     }
   }
 
   String get _bannerAdUnitId {
     if (Platform.isAndroid) {
-      return 'ca-app-pub-3940256099942544/6300978111'; // Android 배너 테스트 ID
+      return 'ca-app-pub-3786451504514591/3270280064'; // Android 배너 광고 실제 ID
     } else if (Platform.isIOS) {
-      return 'ca-app-pub-3940256099942544/2934735716'; // iOS 배너 테스트 ID
+      return 'ca-app-pub-3940256099942544/2934735716'; // iOS 배너 광고 테스트 ID (iOS 실제 ID로 교체 필요)
     } else {
-      return 'ca-app-pub-3940256099942544/6300978111'; // 기본값
+      return 'ca-app-pub-3786451504514591/3270280064'; // 기본값
+    }
+  }
+
+  String get _appOpenAdUnitId {
+    if (Platform.isAndroid) {
+      return 'ca-app-pub-3786451504514591/2304714577'; // Android App Open 광고 실제 ID
+    } else if (Platform.isIOS) {
+      return 'ca-app-pub-3940256099942544/5575463023'; // iOS App Open 광고 테스트 ID (iOS 실제 ID로 교체 필요)
+    } else {
+      return 'ca-app-pub-3786451504514591/2304714577';
     }
   }
   
@@ -41,9 +52,16 @@ class AdService {
     
     try {
       debugPrint('🔄 광고 서비스 초기화 시작...');
+      
+      // 테스트 기기 설정 (모든 기기에서 테스트 광고가 표시되도록)
+      final RequestConfiguration configuration = RequestConfiguration(
+        testDeviceIds: <String>[], // 빈 리스트는 모든 기기를 테스트 기기로 처리
+      );
+      MobileAds.instance.updateRequestConfiguration(configuration);
+      
       await MobileAds.instance.initialize();
       _isInitialized = true;
-      debugPrint('✅ 광고 서비스 초기화 완료');
+      debugPrint('✅ 광고 서비스 초기화 완료 (테스트 모드)');
     } catch (e) {
       debugPrint('❌ 광고 서비스 초기화 실패: $e');
     }
@@ -102,7 +120,7 @@ class AdService {
       return null;
     }
     debugPrint('🎨 배너 광고 위젯 생성');
-    return Container(
+    return SizedBox(
       width: _bannerAd!.size.width.toDouble(),
       height: _bannerAd!.size.height.toDouble(),
       child: AdWidget(ad: _bannerAd!),
@@ -123,7 +141,10 @@ class AdService {
       
       await RewardedAd.load(
         adUnitId: _rewardedAdUnitId,
-        request: const AdRequest(),
+        request: const AdRequest(
+          keywords: ['games', 'entertainment'],
+          nonPersonalizedAds: false,
+        ),
         rewardedAdLoadCallback: RewardedAdLoadCallback(
           onAdLoaded: (RewardedAd ad) {
             debugPrint('✅ 보상형 광고 로드 완료');
@@ -221,6 +242,70 @@ class AdService {
       return false;
     }
   }
+
+  // App Open Ad 로드
+  Future<bool> loadAppOpenAd() async {
+    if (!_isInitialized) {
+      await initialize();
+    }
+    final completer = Completer<bool>();
+    debugPrint('🔄 AppOpen 광고 로드 시작... ($_appOpenAdUnitId)');
+    try {
+      await AppOpenAd.load(
+        adUnitId: _appOpenAdUnitId,
+        request: const AdRequest(),
+        adLoadCallback: AppOpenAdLoadCallback(
+          onAdLoaded: (ad) {
+            debugPrint('✅ AppOpen 광고 로드 완료');
+            _appOpenAd = ad;
+            completer.complete(true);
+          },
+          onAdFailedToLoad: (error) {
+            debugPrint('❌ AppOpen 광고 로드 실패: $error');
+            _appOpenAd = null;
+            completer.complete(false);
+          },
+        ),
+      );
+    } catch (e) {
+      debugPrint('❌ AppOpen 광고 로드 중 오류: $e');
+      _appOpenAd = null;
+      completer.complete(false);
+    }
+    return completer.future;
+  }
+
+  // App Open Ad 표시
+  Future<bool> showAppOpenAd() async {
+    if (_appOpenAd == null) {
+      final loaded = await loadAppOpenAd();
+      if (!loaded || _appOpenAd == null) return false;
+    }
+    final completer = Completer<bool>();
+    try {
+      _appOpenAd!.fullScreenContentCallback = FullScreenContentCallback(
+        onAdShowedFullScreenContent: (ad) => debugPrint('🎬 AppOpen 표시'),
+        onAdFailedToShowFullScreenContent: (ad, error) {
+          debugPrint('❌ AppOpen 표시 실패: $error');
+          ad.dispose();
+          _appOpenAd = null;
+          if (!completer.isCompleted) completer.complete(false);
+        },
+        onAdDismissedFullScreenContent: (ad) {
+          debugPrint('🔚 AppOpen 닫힘');
+          ad.dispose();
+          _appOpenAd = null;
+          if (!completer.isCompleted) completer.complete(true);
+        },
+      );
+      _appOpenAd!.show();
+    } catch (e) {
+      debugPrint('❌ AppOpen 표시 중 오류: $e');
+      _appOpenAd = null;
+      if (!completer.isCompleted) completer.complete(false);
+    }
+    return completer.future;
+  }
   
   /// 광고 로드 상태 확인
   bool get isAdLoaded => _rewardedAd != null;
@@ -233,5 +318,7 @@ class AdService {
     _rewardedAd = null;
     _bannerAd?.dispose();
     _bannerAd = null;
+    _appOpenAd?.dispose();
+    _appOpenAd = null;
   }
 } 

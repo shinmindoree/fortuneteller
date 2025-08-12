@@ -26,14 +26,16 @@ class OpenAIService {
   /// 일반적인 AI 응답 생성
   Future<String> generateResponse(String prompt) async {
     if (!isConfigured) {
-      throw Exception('Azure OpenAI 설정이 완료되지 않았습니다.');
+      // 환경변수가 없을 때 기본 응답 반환
+      return '죄송합니다. 현재 AI 서비스에 일시적인 문제가 있습니다. 잠시 후 다시 시도해주세요.';
     }
     
     try {
       final response = await _callOpenAI(prompt);
       return response;
     } catch (e) {
-      throw Exception('AI 응답 생성 중 오류가 발생했습니다: $e');
+      // 오류 발생 시 기본 응답 반환
+      return '죄송합니다. AI 서비스에 문제가 발생했습니다. 잠시 후 다시 시도해주세요.';
     }
   }
   

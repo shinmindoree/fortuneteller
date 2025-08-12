@@ -3,6 +3,8 @@ import 'package:intl/intl.dart';
 import '../services/saju_calculator.dart';
 import '../models/saju_chars.dart';
 import 'yulhyun_chatbot_screen.dart';
+import '../services/storage_service.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class SajuInputScreen extends StatefulWidget {
   const SajuInputScreen({super.key});
@@ -20,11 +22,27 @@ class _SajuInputScreenState extends State<SajuInputScreen> {
   bool _isLunar = false;
   String? _selectedGender;
   bool _isLoading = false;
+  bool _hasSavedProfile = false;
   
   @override
   void dispose() {
     _nameController.dispose();
     super.dispose();
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _checkSavedProfile();
+  }
+
+  Future<void> _checkSavedProfile() async {
+    final profile = await StorageService.instance.getSajuProfile();
+    if (mounted) {
+      setState(() {
+        _hasSavedProfile = profile != null;
+      });
+    }
   }
 
   Future<void> _selectDate() async {
@@ -109,6 +127,16 @@ class _SajuInputScreenState extends State<SajuInputScreen> {
         gender: _selectedGender!,
       );
 
+      // 입력값 로컬 저장
+      await StorageService.instance.saveSajuProfile(
+        name: _nameController.text,
+        birthDate: _selectedDate!,
+        hour: _selectedTime!.hour,
+        minute: _selectedTime!.minute,
+        gender: _selectedGender!,
+        isLunar: _isLunar,
+      );
+
       // 챗봇 화면으로 이동
       if (mounted) {
         Navigator.of(context).pushReplacement(
@@ -142,7 +170,7 @@ class _SajuInputScreenState extends State<SajuInputScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F5F5),
+      backgroundColor: const Color(0xFF0B0E1A),
       appBar: AppBar(
         title: const Text(
           '사주 정보 입력',
@@ -151,9 +179,19 @@ class _SajuInputScreenState extends State<SajuInputScreen> {
             color: Colors.white,
           ),
         ),
-        backgroundColor: const Color(0xFF1A237E),
+        backgroundColor: const Color(0xFF0D1021),
         elevation: 0,
         centerTitle: true,
+        actions: [
+          if (_hasSavedProfile)
+            TextButton(
+              onPressed: _startWithSaved,
+              child: const Text(
+                '이전 저장 불러오기',
+                style: TextStyle(color: Colors.white),
+              ),
+            ),
+        ],
       ),
       body: _isLoading
           ? const Center(
@@ -161,378 +199,346 @@ class _SajuInputScreenState extends State<SajuInputScreen> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   CircularProgressIndicator(
-                    valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF1A237E)),
+                    valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFD4AF37)),
                   ),
                   SizedBox(height: 16),
                   Text(
                     '사주 정보를 계산하고 있습니다...',
-                    style: TextStyle(fontSize: 16),
+                    style: TextStyle(fontSize: 16, color: Colors.white),
                   ),
                 ],
               ),
             )
-          : SingleChildScrollView(
-              padding: const EdgeInsets.all(24.0),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    // 헤더
-                    Container(
-                      padding: const EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF1A237E),
-                        borderRadius: BorderRadius.circular(16),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.1),
-                            blurRadius: 10,
-                            offset: const Offset(0, 5),
+          : Container(
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [Color(0xFF0B0E1A), Color(0xFF12162A)],
+                ),
+              ),
+              child: SafeArea(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(24.0),
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        // 헤더 (유리 카드)
+                        Container(
+                          padding: const EdgeInsets.all(20),
+                          decoration: BoxDecoration(
+                            color: const Color(0x11FFFFFF),
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(color: const Color(0x22FFFFFF)),
+                            boxShadow: const [
+                              BoxShadow(color: Color(0x33000000), blurRadius: 10, offset: Offset(0, 6)),
+                            ],
                           ),
-                        ],
-                      ),
-                      child: const Column(
-                        children: [
-                          Icon(
-                            Icons.psychology,
-                            size: 48,
-                            color: Colors.white,
-                          ),
-                          SizedBox(height: 16),
-                          Text(
-                            '율현 법사와 상담하기',
-                            style: TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                            ),
-                          ),
-                          SizedBox(height: 8),
-                          Text(
-                            '생년월일과 시간을 입력하시면\nAI 기반 사주 상담을 받으실 수 있습니다',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: Colors.white70,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 32),
-
-                    // 이름 입력
-                    Container(
-                      padding: const EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(16),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.05),
-                            blurRadius: 10,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            '이름',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          TextFormField(
-                            controller: _nameController,
-                            decoration: const InputDecoration(
-                              hintText: '이름을 입력하세요',
-                              border: OutlineInputBorder(),
-                              contentPadding: EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 12,
-                              ),
-                            ),
-                            validator: (value) {
-                              if (value == null || value.isEmpty) {
-                                return '이름을 입력해주세요';
-                              }
-                              return null;
-                            },
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-
-                    // 생년월일 선택
-                    Container(
-                      padding: const EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(16),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.05),
-                            blurRadius: 10,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            '생년월일',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          InkWell(
-                            onTap: _selectDate,
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 12,
-                              ),
-                              decoration: BoxDecoration(
-                                border: Border.all(color: Colors.grey.shade400),
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                              child: Row(
-                                children: [
-                                  Icon(
-                                    Icons.calendar_today,
-                                    color: Colors.grey.shade600,
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Text(
-                                    _selectedDate != null
-                                        ? DateFormat('yyyy년 MM월 dd일').format(_selectedDate!)
-                                        : '생년월일을 선택하세요',
-                                    style: TextStyle(
-                                      color: _selectedDate != null
-                                          ? Colors.black
-                                          : Colors.grey.shade600,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-
-                    // 태어난 시간 선택
-                    Container(
-                      padding: const EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(16),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.05),
-                            blurRadius: 10,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            '태어난 시간',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          InkWell(
-                            onTap: _selectTime,
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 12,
-                              ),
-                              decoration: BoxDecoration(
-                                border: Border.all(color: Colors.grey.shade400),
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                              child: Row(
-                                children: [
-                                  Icon(
-                                    Icons.access_time,
-                                    color: Colors.grey.shade600,
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Text(
-                                    _selectedTime != null
-                                        ? '${_selectedTime!.hour.toString().padLeft(2, '0')}:${_selectedTime!.minute.toString().padLeft(2, '0')}'
-                                        : '태어난 시간을 선택하세요',
-                                    style: TextStyle(
-                                      color: _selectedTime != null
-                                          ? Colors.black
-                                          : Colors.grey.shade600,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-
-                    // 성별 선택
-                    Container(
-                      padding: const EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(16),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.05),
-                            blurRadius: 10,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            '성별',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Row(
+                          child: const Column(
                             children: [
-                              Expanded(
-                                child: RadioListTile<String>(
-                                  title: const Text('남성'),
-                                  value: '남성',
-                                  groupValue: _selectedGender,
-                                  onChanged: (value) {
-                                    setState(() {
-                                      _selectedGender = value;
-                                    });
-                                  },
-                                ),
+                              FaIcon(FontAwesomeIcons.yinYang, size: 44, color: Color(0xFFD4AF37)),
+                              SizedBox(height: 16),
+                              Text(
+                                '율현 법사와 상담하기',
+                                style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: Colors.white),
                               ),
-                              Expanded(
-                                child: RadioListTile<String>(
-                                  title: const Text('여성'),
-                                  value: '여성',
-                                  groupValue: _selectedGender,
-                                  onChanged: (value) {
-                                    setState(() {
-                                      _selectedGender = value;
-                                    });
-                                  },
+                              SizedBox(height: 8),
+                              Text(
+                                '생년월일과 시간을 입력하시면\n율현법사와 상담할 수 있습니다',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(fontSize: 14, color: Colors.white70),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 32),
+
+                        // 이름 입력
+                        Container(
+                          padding: const EdgeInsets.all(20),
+                          decoration: BoxDecoration(
+                            color: const Color(0x11FFFFFF),
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(color: const Color(0x22FFFFFF)),
+                            boxShadow: const [BoxShadow(color: Color(0x22000000), blurRadius: 6, offset: Offset(0, 3))],
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text('이름', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
+                              const SizedBox(height: 8),
+                              TextFormField(
+                                controller: _nameController,
+                                style: const TextStyle(color: Colors.white),
+                                decoration: InputDecoration(
+                                  hintText: '이름을 입력하세요',
+                                  hintStyle: const TextStyle(color: Colors.white70),
+                                  filled: true,
+                                  fillColor: const Color(0x22FFFFFF),
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: const BorderSide(color: Color(0x33FFFFFF)),
+                                  ),
+                                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                ),
+                                validator: (value) {
+                                  if (value == null || value.isEmpty) {
+                                    return '이름을 입력해주세요';
+                                  }
+                                  return null;
+                                },
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+
+                        // 생년월일 선택
+                        Container(
+                          padding: const EdgeInsets.all(20),
+                          decoration: BoxDecoration(
+                            color: const Color(0x11FFFFFF),
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(color: const Color(0x22FFFFFF)),
+                            boxShadow: const [BoxShadow(color: Color(0x22000000), blurRadius: 6, offset: Offset(0, 3))],
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text('생년월일', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
+                              const SizedBox(height: 8),
+                              InkWell(
+                                onTap: _selectDate,
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                  decoration: BoxDecoration(
+                                    border: Border.all(color: const Color(0x33FFFFFF)),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      const Icon(Icons.calendar_today, color: Colors.white70),
+                                      const SizedBox(width: 8),
+                                      Text(
+                                        _selectedDate != null
+                                            ? DateFormat('yyyy년 MM월 dd일').format(_selectedDate!)
+                                            : '생년월일을 선택하세요',
+                                        style: TextStyle(
+                                          color: _selectedDate != null ? Colors.white : Colors.white70,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                                 ),
                               ),
                             ],
                           ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 16),
+                        ),
+                        const SizedBox(height: 16),
 
-                    // 음력/양력 선택
-                    Container(
-                      padding: const EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(16),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.05),
-                            blurRadius: 10,
-                            offset: const Offset(0, 2),
+                        // 태어난 시간 선택
+                        Container(
+                          padding: const EdgeInsets.all(20),
+                          decoration: BoxDecoration(
+                            color: const Color(0x11FFFFFF),
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(color: const Color(0x22FFFFFF)),
+                            boxShadow: const [BoxShadow(color: Color(0x22000000), blurRadius: 6, offset: Offset(0, 3))],
                           ),
-                        ],
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            '음력/양력',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Row(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Expanded(
-                                child: RadioListTile<bool>(
-                                  title: const Text('양력'),
-                                  value: false,
-                                  groupValue: _isLunar,
-                                  onChanged: (value) {
-                                    setState(() {
-                                      _isLunar = value!;
-                                    });
-                                  },
-                                ),
-                              ),
-                              Expanded(
-                                child: RadioListTile<bool>(
-                                  title: const Text('음력'),
-                                  value: true,
-                                  groupValue: _isLunar,
-                                  onChanged: (value) {
-                                    setState(() {
-                                      _isLunar = value!;
-                                    });
-                                  },
+                              const Text('태어난 시간', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
+                              const SizedBox(height: 8),
+                              InkWell(
+                                onTap: _selectTime,
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                  decoration: BoxDecoration(
+                                    border: Border.all(color: const Color(0x33FFFFFF)),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      const Icon(Icons.access_time, color: Colors.white70),
+                                      const SizedBox(width: 8),
+                                      Text(
+                                        _selectedTime != null
+                                            ? '${_selectedTime!.hour.toString().padLeft(2, '0')}:${_selectedTime!.minute.toString().padLeft(2, '0')}'
+                                            : '태어난 시간을 선택하세요',
+                                        style: TextStyle(
+                                          color: _selectedTime != null ? Colors.white : Colors.white70,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                                 ),
                               ),
                             ],
                           ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 32),
+                        ),
+                        const SizedBox(height: 16),
 
-                    // 상담 시작 버튼
-                    ElevatedButton(
-                      onPressed: _submitForm,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF1A237E),
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                        // 성별 선택
+                        Container(
+                          padding: const EdgeInsets.all(20),
+                          decoration: BoxDecoration(
+                            color: const Color(0x11FFFFFF),
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(color: const Color(0x22FFFFFF)),
+                            boxShadow: const [BoxShadow(color: Color(0x22000000), blurRadius: 6, offset: Offset(0, 3))],
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text('성별', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
+                              const SizedBox(height: 8),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: RadioListTile<String>(
+                                      title: const Text('남성', style: TextStyle(color: Colors.white)),
+                                      value: '남성',
+                                      groupValue: _selectedGender,
+                                      activeColor: const Color(0xFFD4AF37),
+                                      onChanged: (value) {
+                                        setState(() {
+                                          _selectedGender = value;
+                                        });
+                                      },
+                                    ),
+                                  ),
+                                  Expanded(
+                                    child: RadioListTile<String>(
+                                      title: const Text('여성', style: TextStyle(color: Colors.white)),
+                                      value: '여성',
+                                      groupValue: _selectedGender,
+                                      activeColor: const Color(0xFFD4AF37),
+                                      onChanged: (value) {
+                                        setState(() {
+                                          _selectedGender = value;
+                                        });
+                                      },
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
                         ),
-                        elevation: 3,
-                      ),
-                      child: const Text(
-                        '율현 법사와 상담 시작',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
+                        const SizedBox(height: 16),
+
+                        // 음력/양력 선택
+                        Container(
+                          padding: const EdgeInsets.all(20),
+                          decoration: BoxDecoration(
+                            color: const Color(0x11FFFFFF),
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(color: const Color(0x22FFFFFF)),
+                            boxShadow: const [BoxShadow(color: Color(0x22000000), blurRadius: 6, offset: Offset(0, 3))],
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text('음력/양력', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
+                              const SizedBox(height: 8),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: RadioListTile<bool>(
+                                      title: const Text('양력', style: TextStyle(color: Colors.white)),
+                                      value: false,
+                                      groupValue: _isLunar,
+                                      activeColor: const Color(0xFFD4AF37),
+                                      onChanged: (value) {
+                                        setState(() {
+                                          _isLunar = value!;
+                                        });
+                                      },
+                                    ),
+                                  ),
+                                  Expanded(
+                                    child: RadioListTile<bool>(
+                                      title: const Text('음력', style: TextStyle(color: Colors.white)),
+                                      value: true,
+                                      groupValue: _isLunar,
+                                      activeColor: const Color(0xFFD4AF37),
+                                      onChanged: (value) {
+                                        setState(() {
+                                          _isLunar = value!;
+                                        });
+                                      },
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
                         ),
-                      ),
+                        const SizedBox(height: 32),
+
+                        // 상담 시작 버튼
+                        ElevatedButton(
+                          onPressed: _submitForm,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFFD4AF37),
+                            foregroundColor: Colors.black,
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            elevation: 3,
+                          ),
+                          child: const Text(
+                            '율현 법사와 상담 시작',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                  ],
+                  ),
                 ),
               ),
             ),
+    );
+  }
+
+  Future<void> _startWithSaved() async {
+    final profile = await StorageService.instance.getSajuProfile();
+    if (profile == null) return;
+
+    final name = profile['name'] as String? ?? '';
+    final birthDate = DateTime.parse(profile['birthDate'] as String);
+    final hour = (profile['hour'] as num).toInt();
+    final minute = (profile['minute'] as num).toInt();
+    final gender = profile['gender'] as String? ?? '남성';
+    final isLunar = profile['isLunar'] as bool? ?? false;
+
+    final sajuChars = SajuCalculator.instance.calculateSaju(
+      birthDate: birthDate,
+      hour: hour,
+      minute: minute,
+      isLunar: isLunar,
+      gender: gender,
+    );
+
+    if (!mounted) return;
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(
+        builder: (context) => YulhyunChatbotScreen(
+          name: name,
+          birthDate: birthDate,
+          birthTime: TimeOfDay(hour: hour, minute: minute),
+          gender: gender,
+          isLunar: isLunar,
+          sajuChars: sajuChars,
+        ),
+      ),
     );
   }
 } 

@@ -1,13 +1,13 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <application
-        android:label="fortuneteller"
+        android:label="율현법사"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher"
         android:enableOnBackInvokedCallback="true">
-        <!-- AdMob 앱 ID (테스트용) -->
+        <!-- AdMob 앱 ID (실제) -->
         <meta-data
             android:name="com.google.android.gms.ads.APPLICATION_ID"
-            android:value="ca-app-pub-3940256099942544~3347511713"/>
+            android:value="ca-app-pub-3786451504514591~3757079816"/>
         <activity
             android:name=".MainActivity"
             android:exported="true"
