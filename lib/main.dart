@@ -13,25 +13,38 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
   try {
-    // Load environment variables
-    await dotenv.load(fileName: ".env");
+    // Load environment variables (안전하게 처리)
+    try {
+      await dotenv.load(fileName: ".env");
+      print('✅ 환경변수 로드 완료');
+    } catch (e) {
+      print('⚠️ 환경변수 로드 실패 (기본값 사용): $e');
+    }
     
-    // Initialize Supabase
-    await SupabaseService.initialize();
+    // Initialize services (각각 안전하게 처리)
+    // Supabase는 환경변수가 있을 때만 초기화
+    try {
+      await SupabaseService.initialize();
+    } catch (e) {
+      print('⚠️ Supabase 초기화 건너뛰기: $e');
+    }
     
-    // Initialize Storage Service
     await StorageService.instance.initialize();
     
-    // Initialize Auth Service
-    await AuthService.instance.initialize();
+    // AuthService는 Supabase에 의존하므로 건너뛰기
+    try {
+      await AuthService.instance.initialize();
+    } catch (e) {
+      print('⚠️ Auth 서비스 초기화 건너뛰기: $e');
+    }
     
-    // Initialize Ad Service
     await AdService.instance.initialize();
     
     runApp(const FortuneTellerApp());
   } catch (e) {
     print('앱 초기화 실패: $e');
-    runApp(const ErrorApp(error: '앱 초기화에 실패했습니다. 환경 설정을 확인해주세요.'));
+    // 앱 자체는 실행되도록 함
+    runApp(const FortuneTellerApp());
   }
 }
 
@@ -109,21 +122,21 @@ class FortuneTellerApp extends StatelessWidget {
           titleTextStyle: TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.w700,
-            color: Colors.white,
+              color: Colors.white,
           ),
         ),
         cardTheme: CardThemeData(
           color: const Color(0x11FFFFFF),
           elevation: 0,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
+                        shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
             side: const BorderSide(color: Color(0x22FFFFFF)),
           ),
         ),
         dialogTheme: DialogThemeData(
           backgroundColor: const Color(0xFF12162A),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(16),
             side: const BorderSide(color: Color(0x33D4AF37)),
           ),
           titleTextStyle: baseTextTheme.titleLarge?.copyWith(

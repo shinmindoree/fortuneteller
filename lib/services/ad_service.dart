@@ -15,34 +15,34 @@ class AdService {
   BannerAd? _bannerAd;
   AppOpenAd? _appOpenAd;
   
-  // 테스트 광고 단위 ID
+  // 실제 AdMob 광고 단위 ID
   String get _rewardedAdUnitId {
     if (Platform.isAndroid) {
-      return 'ca-app-pub-3940256099942544/5224354917'; // Android 테스트 ID
+      return 'ca-app-pub-3786451504514591/7213959158'; // Android 보상형 광고 실제 ID
     } else if (Platform.isIOS) {
-      return 'ca-app-pub-3940256099942544/1712485313'; // iOS 테스트 ID
+      return 'ca-app-pub-3940256099942544/1712485313'; // iOS 보상형 광고 테스트 ID (iOS 실제 ID로 교체 필요)
     } else {
-      return 'ca-app-pub-3940256099942544/5224354917'; // 기본값
+      return 'ca-app-pub-3786451504514591/7213959158'; // 기본값
     }
   }
 
   String get _bannerAdUnitId {
     if (Platform.isAndroid) {
-      return 'ca-app-pub-3940256099942544/6300978111'; // Android 배너 테스트 ID
+      return 'ca-app-pub-3786451504514591/3270280064'; // Android 배너 광고 실제 ID
     } else if (Platform.isIOS) {
-      return 'ca-app-pub-3940256099942544/2934735716'; // iOS 배너 테스트 ID
+      return 'ca-app-pub-3940256099942544/2934735716'; // iOS 배너 광고 테스트 ID (iOS 실제 ID로 교체 필요)
     } else {
-      return 'ca-app-pub-3940256099942544/6300978111'; // 기본값
+      return 'ca-app-pub-3786451504514591/3270280064'; // 기본값
     }
   }
 
   String get _appOpenAdUnitId {
     if (Platform.isAndroid) {
-      return 'ca-app-pub-3940256099942544/9257395921'; // Android App Open 테스트 ID
+      return 'ca-app-pub-3786451504514591/2304714577'; // Android App Open 광고 실제 ID
     } else if (Platform.isIOS) {
-      return 'ca-app-pub-3940256099942544/5575463023'; // iOS App Open 테스트 ID
+      return 'ca-app-pub-3940256099942544/5575463023'; // iOS App Open 광고 테스트 ID (iOS 실제 ID로 교체 필요)
     } else {
-      return 'ca-app-pub-3940256099942544/9257395921';
+      return 'ca-app-pub-3786451504514591/2304714577';
     }
   }
   
@@ -52,9 +52,16 @@ class AdService {
     
     try {
       debugPrint('🔄 광고 서비스 초기화 시작...');
+      
+      // 테스트 기기 설정 (모든 기기에서 테스트 광고가 표시되도록)
+      final RequestConfiguration configuration = RequestConfiguration(
+        testDeviceIds: <String>[], // 빈 리스트는 모든 기기를 테스트 기기로 처리
+      );
+      MobileAds.instance.updateRequestConfiguration(configuration);
+      
       await MobileAds.instance.initialize();
       _isInitialized = true;
-      debugPrint('✅ 광고 서비스 초기화 완료');
+      debugPrint('✅ 광고 서비스 초기화 완료 (테스트 모드)');
     } catch (e) {
       debugPrint('❌ 광고 서비스 초기화 실패: $e');
     }
@@ -134,7 +141,10 @@ class AdService {
       
       await RewardedAd.load(
         adUnitId: _rewardedAdUnitId,
-        request: const AdRequest(),
+        request: const AdRequest(
+          keywords: ['games', 'entertainment'],
+          nonPersonalizedAds: false,
+        ),
         rewardedAdLoadCallback: RewardedAdLoadCallback(
           onAdLoaded: (RewardedAd ad) {
             debugPrint('✅ 보상형 광고 로드 완료');

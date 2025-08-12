@@ -537,9 +537,9 @@ $birthInfo에 태어나신 $name님의 운세를 상담해드리겠습니다.
         elevation: 0,
         title: const Text(
           '율현 법사',
-          style: TextStyle(
+                style: TextStyle(
             fontWeight: FontWeight.bold,
-            color: Colors.white,
+                  color: Colors.white,
           ),
         ),
         actions: [
@@ -572,20 +572,20 @@ $birthInfo에 태어나신 $name님의 운세를 상담해드리겠습니다.
             ),
           if (_remainingQuestions > 0)
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
                 color: const Color(0x3322FF88),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Text(
-                '남은 질문: $_remainingQuestions',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
+                  borderRadius: BorderRadius.circular(12),
                 ),
+                child: Text(
+                  '남은 질문: $_remainingQuestions',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
               ),
             ),
+          ),
         ],
       ),
       body: Container(
@@ -597,8 +597,8 @@ $birthInfo에 태어나신 $name님의 운세를 상담해드리겠습니다.
           ),
         ),
         child: SafeArea(
-          child: Column(
-            children: [
+        child: Column(
+          children: [
               // 사주 정보 표시
               Container(
                 margin: const EdgeInsets.all(16),
@@ -647,56 +647,56 @@ $birthInfo에 태어나신 $name님의 운세를 상담해드리겠습니다.
               ),
               const SizedBox(height: 8),
               // 채팅 메시지 목록
-              Expanded(
-                child: ListView.builder(
-                  controller: _scrollController,
-                  padding: const EdgeInsets.all(16),
+            Expanded(
+              child: ListView.builder(
+                controller: _scrollController,
+                padding: const EdgeInsets.all(16),
                   itemCount: _messages.length + (_isLoading ? 1 : 0),
-                  itemBuilder: (context, index) {
+                itemBuilder: (context, index) {
                     if (index == _messages.length && _isLoading) {
-                      return _buildTypingIndicator();
-                    }
+                    return _buildTypingIndicator();
+                  }
                     return _buildMessage(_messages[index]);
-                  },
-                ),
+                },
               ),
+            ),
               // 메시지 입력 영역
-              Container(
+            Container(
                 padding: const EdgeInsets.all(14),
                 decoration: const BoxDecoration(
                   color: Color(0xFF0D1021),
                   boxShadow: [BoxShadow(color: Color(0x33000000), blurRadius: 8, offset: Offset(0, -2))],
-                ),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: TextField(
-                        controller: _messageController,
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _messageController,
                         enabled: _remainingQuestions > 0,
-                        decoration: InputDecoration(
+                      decoration: InputDecoration(
                           hintText: _remainingQuestions > 0 ? '무엇이 궁금하신가요…' : '광고 시청 후 질문 가능',
                           hintStyle: const TextStyle(color: Colors.white54),
-                          filled: true,
+                        filled: true,
                           fillColor: const Color(0x22FFFFFF),
-                          border: OutlineInputBorder(
+                        border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(24),
                             borderSide: const BorderSide(color: Color(0x33FFFFFF)),
-                          ),
+                        ),
                           contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                         ),
                         onSubmitted: (_) => _sendMessage(),
-                      ),
                     ),
-                    const SizedBox(width: 8),
+                  ),
+                  const SizedBox(width: 8),
                     IconButton(
                       onPressed: _isLoading ? null : _sendMessage,
                       icon: Icon(
                         Icons.send,
                         color: _remainingQuestions > 0 ? const Color(0xFFD4AF37) : const Color(0xFF8C6A00),
-                      ),
                     ),
-                  ],
-                ),
+                  ),
+                ],
+              ),
               ),
               // 배너 광고 영역 (입력창 아래 실제 위치)
               if (_bannerAdWidget != null)
@@ -820,15 +820,15 @@ $birthInfo에 태어나신 $name님의 운세를 상담해드리겠습니다.
 
   Widget _buildDot(int index) {
     return AnimatedBuilder(
-      animation: _typingAnimationController,
-      builder: (context, child) {
-        final delay = index * 0.2;
+              animation: _typingAnimationController,
+              builder: (context, child) {
+                    final delay = index * 0.2;
         final animationValue = math.max(0.0, _typingAnimationController.value - delay);
         
-        return Container(
-          width: 8,
-          height: 8,
-          decoration: BoxDecoration(
+                    return Container(
+                      width: 8,
+                      height: 8,
+                      decoration: BoxDecoration(
             color: const Color(0xFFD4AF37).withOpacity(0.3 + (0.6 * animationValue)),
             shape: BoxShape.circle,
           ),
