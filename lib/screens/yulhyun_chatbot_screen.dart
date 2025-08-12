@@ -16,6 +16,11 @@ class YulhyunChatbotScreen extends StatefulWidget {
   final bool isLunar;
   final SajuChars sajuChars;
   
+  // 선택 항목들
+  final String? maritalStatus;
+  final String? city;
+  final String? bloodType;
+  
   const YulhyunChatbotScreen({
     super.key,
     required this.name,
@@ -24,6 +29,9 @@ class YulhyunChatbotScreen extends StatefulWidget {
     required this.gender,
     required this.isLunar,
     required this.sajuChars,
+    this.maritalStatus,
+    this.city,
+    this.bloodType,
   });
 
   @override
@@ -490,6 +498,18 @@ $birthInfo에 태어나신 $name님의 운세를 상담해드리겠습니다.
   }
 
   Future<String> _generateAIResponse(String userMessage) async {
+    // 선택 항목 정보 구성
+    String additionalInfo = '';
+    if (widget.maritalStatus != null) {
+      additionalInfo += '- 결혼 여부: ${widget.maritalStatus}\n';
+    }
+    if (widget.city != null) {
+      additionalInfo += '- 거주 도시: ${widget.city} (풍수지리 고려)\n';
+    }
+    if (widget.bloodType != null) {
+      additionalInfo += '- 혈액형: ${widget.bloodType}\n';
+    }
+    
     final prompt = '''
 당신은 율현 법사입니다. 사주명리학 전문가로서 친근하고 따뜻한 톤으로 답변해주세요.
 
@@ -500,10 +520,10 @@ $birthInfo에 태어나신 $name님의 운세를 상담해드리겠습니다.
 - 성별: ${widget.gender}
 - 음력/양력: ${widget.isLunar ? '음력' : '양력'}
 - 사주 8자: ${widget.sajuChars.display}
-
+${additionalInfo.isNotEmpty ? additionalInfo : ''}
 사용자 질문: $userMessage
 
-율현 법사로서 친근하고 전문적인 답변을 해주세요. 사주명리학 지식을 바탕으로 하되, 너무 복잡하지 않게 설명해주세요.
+${additionalInfo.isNotEmpty ? '위의 추가 정보(결혼여부, 거주도시, 혈액형)를 고려하여 ' : ''}율현 법사로서 친근하고 전문적인 답변을 해주세요. 사주명리학 지식을 바탕으로 하되, 너무 복잡하지 않게 설명해주세요.
 
 답변은 200~400자 내외로 간결하게 해주세요.
 ''';

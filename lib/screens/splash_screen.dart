@@ -85,6 +85,11 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
             gender: gender,
           );
 
+          // 선택 항목들도 불러오기
+          final maritalStatus = profile['maritalStatus'] as String?;
+          final city = profile['city'] as String?;
+          final bloodType = profile['bloodType'] as String?;
+
           Navigator.of(context).pushReplacement(
             PageRouteBuilder(
               pageBuilder: (context, animation, secondaryAnimation) => YulhyunChatbotScreen(
@@ -94,6 +99,9 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
                 gender: gender,
                 isLunar: isLunar,
                 sajuChars: sajuChars,
+                maritalStatus: maritalStatus,
+                city: city,
+                bloodType: bloodType,
               ),
               transitionsBuilder: (context, animation, secondaryAnimation, child) {
                 return FadeTransition(opacity: animation, child: child);

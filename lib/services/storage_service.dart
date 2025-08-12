@@ -69,6 +69,19 @@ class StorageService {
     }
   }
 
+  // Map을 받는 오버로드 메서드
+  Future<bool> saveSajuProfileMap(Map<String, dynamic> profileData) async {
+    try {
+      final prefs = await _preferences;
+      final success = await prefs.setString(_keySajuProfile, jsonEncode(profileData));
+      debugPrint(success ? '💾 사주 프로필 저장 완료' : '❌ 사주 프로필 저장 실패');
+      return success;
+    } catch (e) {
+      debugPrint('❌ 사주 프로필 저장 중 오류: $e');
+      return false;
+    }
+  }
+
   Future<Map<String, dynamic>?> getSajuProfile() async {
     try {
       final prefs = await _preferences;
