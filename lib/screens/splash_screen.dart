@@ -51,78 +51,122 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
       curve: Curves.elasticOut,
     ));
     
-    _startAnimations();
+    _startOptimizedFlow();
   }
 
-  void _startAnimations() async {
+  void _startOptimizedFlow() async {
+    // 애니메이션 시작
     _fadeController.forward();
     await Future.delayed(const Duration(milliseconds: 500));
     _scaleController.forward();
     
-    Timer(const Duration(seconds: 3), () async {
-      // 스플래시 종료 시 전면(App Open) 광고 표시 시도
-      try {
-        final shown = await AdService.instance.showAppOpenAd();
-        debugPrint('AppOpen 표시 결과: $shown');
-      } catch (_) {}
+    // 병렬 처리: 애니메이션과 함께 데이터 로딩 시작
+    final futures = await Future.wait([
+      _preloadAppOpenAd(),
+      _loadUserProfile(),
+      Future.delayed(const Duration(milliseconds: 1800)), // 최소 애니메이션 시간 보장
+    ]);
+    
+    final adPreloaded = futures[0] as bool;
+    final profile = futures[1] as Map<String, dynamic>?;
+    
+    if (!mounted) return;
+    
+    // 광고가 준비되었으면 표시 (비차단)
+    if (adPreloaded) {
+      _showAppOpenAdAsync();
+    }
+    
+    // 프로필 확인 후 적절한 화면으로 이동
+    _navigateToNextScreen(profile);
+  }
 
-      final profile = await StorageService.instance.getSajuProfile();
-      if (!mounted) return;
-      if (profile != null) {
-        try {
-          final name = profile['name'] as String? ?? '';
-          final birthDate = DateTime.parse(profile['birthDate'] as String);
-          final hour = (profile['hour'] as num).toInt();
-          final minute = (profile['minute'] as num).toInt();
-          final gender = profile['gender'] as String? ?? '남성';
-          final isLunar = profile['isLunar'] as bool? ?? false;
+  Future<bool> _preloadAppOpenAd() async {
+    try {
+      // 백그라운드에서 광고 미리 로딩
+      await AdService.instance.loadAppOpenAd();
+      return true;
+    } catch (e) {
+      debugPrint('광고 프리로딩 실패: $e');
+      return false;
+    }
+  }
 
-          final sajuChars = SajuCalculator.instance.calculateSaju(
-            birthDate: birthDate,
-            hour: hour,
-            minute: minute,
-            isLunar: isLunar,
-            gender: gender,
-          );
+  Future<Map<String, dynamic>?> _loadUserProfile() async {
+    try {
+      return await StorageService.instance.getSajuProfile();
+    } catch (e) {
+      debugPrint('프로필 로딩 실패: $e');
+      return null;
+    }
+  }
 
-          // 선택 항목들도 불러오기
-          final maritalStatus = profile['maritalStatus'] as String?;
-          final city = profile['city'] as String?;
-          final bloodType = profile['bloodType'] as String?;
-
-          Navigator.of(context).pushReplacement(
-            PageRouteBuilder(
-              pageBuilder: (context, animation, secondaryAnimation) => YulhyunChatbotScreen(
-                name: name,
-                birthDate: birthDate,
-                birthTime: TimeOfDay(hour: hour, minute: minute),
-                gender: gender,
-                isLunar: isLunar,
-                sajuChars: sajuChars,
-                maritalStatus: maritalStatus,
-                city: city,
-                bloodType: bloodType,
-              ),
-              transitionsBuilder: (context, animation, secondaryAnimation, child) {
-                return FadeTransition(opacity: animation, child: child);
-              },
-              transitionDuration: const Duration(milliseconds: 500),
-            ),
-          );
-          return;
-        } catch (_) {}
-      }
-
-      Navigator.of(context).pushReplacement(
-        PageRouteBuilder(
-          pageBuilder: (context, animation, secondaryAnimation) => const SajuInputScreen(),
-          transitionsBuilder: (context, animation, secondaryAnimation, child) {
-            return FadeTransition(opacity: animation, child: child);
-          },
-          transitionDuration: const Duration(milliseconds: 500),
-        ),
-      );
+  void _showAppOpenAdAsync() {
+    // 비동기로 광고 표시 (다음 화면 전환을 차단하지 않음)
+    AdService.instance.showAppOpenAd().then((shown) {
+      debugPrint('AppOpen 광고 표시 결과: $shown');
+    }).catchError((error) {
+      debugPrint('AppOpen 광고 표시 실패: $error');
     });
+  }
+
+  void _navigateToNextScreen(Map<String, dynamic>? profile) {
+    if (profile != null) {
+      try {
+        final name = profile['name'] as String? ?? '';
+        final birthDate = DateTime.parse(profile['birthDate'] as String);
+        final hour = (profile['hour'] as num).toInt();
+        final minute = (profile['minute'] as num).toInt();
+        final gender = profile['gender'] as String? ?? '남성';
+        final isLunar = profile['isLunar'] as bool? ?? false;
+
+        final sajuChars = SajuCalculator.instance.calculateSaju(
+          birthDate: birthDate,
+          hour: hour,
+          minute: minute,
+          isLunar: isLunar,
+          gender: gender,
+        );
+
+        // 선택 항목들도 불러오기
+        final maritalStatus = profile['maritalStatus'] as String?;
+        final city = profile['city'] as String?;
+        final bloodType = profile['bloodType'] as String?;
+
+        Navigator.of(context).pushReplacement(
+          PageRouteBuilder(
+            pageBuilder: (context, animation, secondaryAnimation) => YulhyunChatbotScreen(
+              name: name,
+              birthDate: birthDate,
+              birthTime: TimeOfDay(hour: hour, minute: minute),
+              gender: gender,
+              isLunar: isLunar,
+              sajuChars: sajuChars,
+              maritalStatus: maritalStatus,
+              city: city,
+              bloodType: bloodType,
+            ),
+            transitionsBuilder: (context, animation, secondaryAnimation, child) {
+              return FadeTransition(opacity: animation, child: child);
+            },
+            transitionDuration: const Duration(milliseconds: 500),
+          ),
+        );
+        return;
+      } catch (e) {
+        debugPrint('프로필 파싱 실패: $e');
+      }
+    }
+
+    Navigator.of(context).pushReplacement(
+      PageRouteBuilder(
+        pageBuilder: (context, animation, secondaryAnimation) => const SajuInputScreen(),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          return FadeTransition(opacity: animation, child: child);
+        },
+        transitionDuration: const Duration(milliseconds: 500),
+      ),
+    );
   }
 
   @override

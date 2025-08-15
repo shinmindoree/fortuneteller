@@ -62,9 +62,25 @@ class AdService {
       await MobileAds.instance.initialize();
       _isInitialized = true;
       debugPrint('✅ 광고 서비스 초기화 완료 (테스트 모드)');
+      
+      // 초기화 완료 후 AppOpen 광고 미리 로딩
+      _preloadAppOpenAd();
     } catch (e) {
       debugPrint('❌ 광고 서비스 초기화 실패: $e');
     }
+  }
+
+  /// AppOpen 광고 미리 로딩 (비동기)
+  void _preloadAppOpenAd() {
+    loadAppOpenAd().then((success) {
+      if (success) {
+        debugPrint('✅ AppOpen 광고 백그라운드 프리로딩 완료');
+      } else {
+        debugPrint('⚠️ AppOpen 광고 프리로딩 실패');
+      }
+    }).catchError((error) {
+      debugPrint('❌ AppOpen 광고 프리로딩 오류: $error');
+    });
   }
   
   // 배너 광고 로드
