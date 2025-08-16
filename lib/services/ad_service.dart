@@ -134,6 +134,12 @@ class AdService {
       await initialize();
     }
     
+    // 기존 광고가 있다면 dispose
+    _rewardedAd?.dispose();
+    _rewardedAd = null;
+    
+    final completer = Completer<void>();
+    
     try {
       debugPrint('🔄 보상형 광고 로드 시작...');
       debugPrint('📱 플랫폼: ${Platform.operatingSystem}');
@@ -161,15 +167,19 @@ class AdService {
               onAdFailedToShowFullScreenContent: (RewardedAd ad, AdError error) {
                 debugPrint('❌ 광고 표시 실패: $error');
                 ad.dispose();
+                _rewardedAd = null;
               },
               onAdDismissedFullScreenContent: (RewardedAd ad) {
                 debugPrint('🔚 광고가 닫힘');
                 ad.dispose();
+                _rewardedAd = null;
               },
               onAdClicked: (RewardedAd ad) {
                 debugPrint('🖱️ 광고 클릭됨');
               },
             );
+            
+            if (!completer.isCompleted) completer.complete();
           },
           onAdFailedToLoad: (LoadAdError error) {
             debugPrint('❌ 보상형 광고 로드 실패: $error');
@@ -177,12 +187,18 @@ class AdService {
             debugPrint('🔍 에러 메시지: ${error.message}');
             debugPrint('🔍 에러 도메인: ${error.domain}');
             _rewardedAd = null;
+            if (!completer.isCompleted) completer.complete();
           },
         ),
       );
+      
+      // 로드 완료까지 대기
+      await completer.future;
+      
     } catch (e) {
       debugPrint('❌ 보상형 광고 로드 중 오류: $e');
       _rewardedAd = null;
+      if (!completer.isCompleted) completer.complete();
     }
   }
   
